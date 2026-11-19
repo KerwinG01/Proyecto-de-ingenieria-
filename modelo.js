@@ -1,0 +1,105 @@
+/**
+ * Estructuras de datos de Ciudad Verde.
+ */
+
+/** Crea un hogar con los campos definidos para el modelo B9. */
+export function crearHogar({
+  id,
+  microzona,
+  alias,
+  referenciaEntrega,
+  consentimiento = false,
+}) {
+  return { id, microzona, alias, referenciaEntrega, consentimiento };
+}
+
+/** Crea un reciclador y copia sus colecciones para evitar referencias compartidas. */
+export function crearReciclador({
+  id,
+  microzona,
+  materiales = [],
+  franja = {},
+  cupo,
+  activo = true,
+  asignacionesHistoricas = 0,
+  tasaConfiabilidad = 0.70,
+}) {
+  return {
+    id,
+    microzona,
+    materiales: [...materiales],
+    franja: { ...franja },
+    cupo,
+    activo,
+    asignacionesHistoricas,
+    tasaConfiabilidad,
+  };
+}
+
+/** Crea una solicitud con listas propias y sin intentos previos por defecto. */
+export function crearSolicitud({
+  id,
+  hogarId,
+  materiales = [],
+  bolsas,
+  franja = {},
+  estado = "REGISTRADA",
+  registradaPor = "ciudadano",
+  recicladorId = null,
+  intentos = [],
+}) {
+  return {
+    id,
+    hogarId,
+    materiales: [...materiales],
+    bolsas,
+    franja: { ...franja },
+    estado,
+    registradaPor,
+    recicladorId,
+    intentos: intentos.map((intento) => ({ ...intento })),
+  };
+}
+
+/** Crea un intento de oferta a un reciclador. */
+export function crearIntento({
+  solicitudId,
+  recicladorId,
+  numero,
+  resultado = null,
+  fecha = null,
+}) {
+  return { solicitudId, recicladorId, numero, resultado, fecha };
+}
+
+/** Crea un evento de auditoría de cambio de estado. */
+export function crearEvento({
+  solicitudId,
+  estadoAnterior = null,
+  estadoNuevo,
+  responsable,
+  fecha,
+}) {
+  return { solicitudId, estadoAnterior, estadoNuevo, responsable, fecha };
+}
+
+/** Crea un mensaje que se mostrará en la bandeja simulada. */
+export function crearMensaje({ destinatario, texto, fecha }) {
+  return { destinatario, texto, fecha };
+}
+
+/**
+ * Crea el contenedor de datos persistible como JSON.
+ * Los parámetros se reciben desde el módulo de configuración de la etapa E4.
+ */
+export function crearEstadoInicial(parametros = {}) {
+  return {
+    versionModelo: 1,
+    hogares: [],
+    recicladores: [],
+    solicitudes: [],
+    eventos: [],
+    mensajes: [],
+    parametros: { ...parametros },
+  };
+}

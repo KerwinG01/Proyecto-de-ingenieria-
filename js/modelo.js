@@ -50,6 +50,8 @@ export function crearSolicitud({
   registradaPor = "ciudadano",
   recicladorId = null,
   intentos = [],
+  bolsasReales = null,
+  motivoFalla = "",
 }) {
   return {
     id,
@@ -61,6 +63,8 @@ export function crearSolicitud({
     registradaPor,
     recicladorId,
     intentos: intentos.map((intento) => ({ ...intento })),
+    bolsasReales,
+    motivoFalla,
   };
 }
 
@@ -71,8 +75,9 @@ export function crearIntento({
   numero,
   resultado = null,
   fecha = null,
+  motivo = "",
 }) {
-  return { solicitudId, recicladorId, numero, resultado, fecha };
+  return { solicitudId, recicladorId, numero, resultado, fecha, motivo };
 }
 
 /** Crea un evento de auditoría de cambio de estado. */

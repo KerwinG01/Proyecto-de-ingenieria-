@@ -304,7 +304,9 @@ export function resolverCascada({
   solicitudes = [],
   parametros = {},
   distanciasKm = {},
+  recicladorOfertadoId = solicitud?.recicladorId ?? null,
   respuestasPorReciclador = {},
+  motivosPorReciclador = {},
   fecha = null,
 }) {
   const config = combinarParametros(parametros);
@@ -312,6 +314,13 @@ export function resolverCascada({
   const intentos = (solicitud.intentos || []).map((intento) => ({ ...intento }));
   const yaIntentados = new Set(intentos.map((intento) => intento.recicladorId));
   const candidatos = ranking.compatibles.filter(({ reciclador }) => !yaIntentados.has(reciclador.id));
+  if (recicladorOfertadoId !== null) {
+    candidatos.sort((a, b) => {
+      if (a.reciclador.id === recicladorOfertadoId) return -1;
+      if (b.reciclador.id === recicladorOfertadoId) return 1;
+      return b.puntaje.S - a.puntaje.S || compararIds(a.reciclador, b.reciclador);
+    });
+  }
   const intentosDisponibles = Math.max(0, Number(config.k) - intentos.length);
   const limite = Math.min(candidatos.length, intentosDisponibles);
 
@@ -352,6 +361,7 @@ export function resolverCascada({
       numero: intentos.length + 1,
       resultado: respuesta,
       fecha,
+      motivo: motivosPorReciclador[reciclador.id] || "",
     });
 
     if (respuesta === "aceptado") {

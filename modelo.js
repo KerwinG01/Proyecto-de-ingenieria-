@@ -1,5 +1,6 @@
 /**
  * Estructuras de datos de Ciudad Verde.
+ * Este módulo solo construye datos: no accede al DOM ni a localStorage.
  */
 
 /** Crea un hogar con los campos definidos para el modelo B9. */
@@ -16,6 +17,7 @@ export function crearHogar({
 /** Crea un reciclador y copia sus colecciones para evitar referencias compartidas. */
 export function crearReciclador({
   id,
+  nombre = "",
   microzona,
   materiales = [],
   franja = {},
@@ -26,6 +28,7 @@ export function crearReciclador({
 }) {
   return {
     id,
+    nombre,
     microzona,
     materiales: [...materiales],
     franja: { ...franja },

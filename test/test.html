@@ -40,6 +40,7 @@
       validarSolicitud,
     } from "../js/motor.js";
     import { transicionarEstado } from "../js/estados.js";
+    import { actualizarCupoReciclador, validarParametros } from "../js/parametros.js";
     import { crearHogar, crearReciclador, crearSolicitud } from "../js/modelo.js";
 
     const parametros = {
@@ -336,6 +337,23 @@
         comprobar(resultado.ok && resultado.evento.estadoAnterior === "ASIGNADA" && resultado.evento.estadoNuevo === "ASIGNADA", "Se esperaba registrar el cambio de intento.");
       });
 
+      probar("PAR-01: los parámetros base son válidos", () => {
+        const resultado = validarParametros(parametros);
+        comprobar(resultado.valida, `Se esperaban parámetros válidos: ${JSON.stringify(resultado.errores)}.`);
+      });
+
+      probar("PAR-02: los pesos cuya suma no es 1 se rechazan", () => {
+        const resultado = validarParametros({ ...parametros, pesos: { P: 0.5, H: 0.3, E: 0.2, R: 0.2 } });
+        comprobar(!resultado.valida && resultado.errores.some((error) => error.codigo === "SUMA_PESOS_INVALIDA"), "Se esperaba rechazar pesos que suman 1,2.");
+      });
+
+      probar("PAR-03: el cupo individual se actualiza sin modificar la lista original", () => {
+        const base = [reciclador("R1", { cupo: 26 })];
+        const resultado = actualizarCupoReciclador(base, "R1", 30);
+        comprobar(resultado.ok && resultado.recicladores[0].cupo === 30, "Se esperaba actualizar el cupo a 30.");
+        comprobar(base[0].cupo === 26, "La lista recibida debía permanecer sin cambios.");
+      });
+
       const lista = document.querySelector("#resultados");
       lista.replaceChildren();
       for (const prueba of pruebas) {
@@ -358,4 +376,3 @@
   </script>
 </body>
 </html>
-

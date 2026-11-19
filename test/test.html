@@ -39,6 +39,7 @@
       resolverCascada,
       validarSolicitud,
     } from "../js/motor.js";
+    import { transicionarEstado } from "../js/estados.js";
     import { crearHogar, crearReciclador, crearSolicitud } from "../js/modelo.js";
 
     const parametros = {
@@ -300,6 +301,41 @@
         comprobar(JSON.stringify(reparto) === JSON.stringify([17, 17, 16]), `Se esperaba 17/17/16; se obtuvo ${reparto.join("/")}.`);
       });
 
+      probar("EST-01: transición válida cambia estado y crea un evento con responsable y fecha", () => {
+        const s = solicitud("S-EST-01", { estado: "REGISTRADA" });
+        const resultado = transicionarEstado({
+          solicitud: s,
+          estadoNuevo: "VALIDADA",
+          responsable: "Facilitador",
+          fecha: "2026-11-19T08:00:00-05:00",
+        });
+        comprobar(resultado.ok && resultado.solicitudActualizada.estado === "VALIDADA", "Se esperaba cambiar a VALIDADA.");
+        comprobar(resultado.evento.estadoAnterior === "REGISTRADA" && resultado.evento.estadoNuevo === "VALIDADA", "El evento debe conservar ambos estados.");
+        comprobar(resultado.evento.responsable === "Facilitador" && Boolean(resultado.evento.fecha), "El evento debe registrar responsable y fecha.");
+      });
+
+      probar("EST-02: transición no incluida en B6 se rechaza", () => {
+        const s = solicitud("S-EST-02", { estado: "REGISTRADA" });
+        const resultado = transicionarEstado({
+          solicitud: s,
+          estadoNuevo: "ASIGNADA",
+          responsable: "Facilitador",
+          fecha: "2026-11-19T08:00:00-05:00",
+        });
+        comprobar(!resultado.ok && resultado.codigo === "TRANSICION_NO_PERMITIDA", "Se esperaba rechazar REGISTRADA → ASIGNADA.");
+      });
+
+      probar("EST-03: ASIGNADA → ASIGNADA está permitida para el siguiente intento", () => {
+        const s = solicitud("S-EST-03", { estado: "ASIGNADA" });
+        const resultado = transicionarEstado({
+          solicitud: s,
+          estadoNuevo: "ASIGNADA",
+          responsable: "Motor de asignación",
+          fecha: "2026-11-19T08:00:00-05:00",
+        });
+        comprobar(resultado.ok && resultado.evento.estadoAnterior === "ASIGNADA" && resultado.evento.estadoNuevo === "ASIGNADA", "Se esperaba registrar el cambio de intento.");
+      });
+
       const lista = document.querySelector("#resultados");
       lista.replaceChildren();
       for (const prueba of pruebas) {
@@ -322,3 +358,4 @@
   </script>
 </body>
 </html>
+

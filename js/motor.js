@@ -2,19 +2,7 @@
  * Lógica pura de validación, compatibilidad, puntuación y asignación.
  * No accede al DOM, a localStorage ni al reloj del sistema.
  */
-
-const PARAMETROS_BASE = Object.freeze({
-  Ta: 2,
-  k: 3,
-  pesos: Object.freeze({ P: 0.40, H: 0.30, E: 0.20, R: 0.10 }),
-  volumenBolsa: 0.073,
-  Qv: 1.5,
-  Vmax: 2,
-  materialesAceptados: Object.freeze(["papel", "plástico", "vidrio", "metal"]),
-  bolsasMin: 1,
-  bolsasMax: 4,
-  distanciaAdyacenciaKm: 2,
-});
+import { PARAMETROS_POR_DEFECTO as PARAMETROS_BASE } from "./parametros.js";
 
 const ESTADOS_QUE_OCUPAN_CUPO = new Set(["ASIGNADA", "CONFIRMADA", "ATENDIDA", "FALLIDA"]);
 const RESULTADOS_INTENTO = new Set(["aceptado", "rechazado", "vencido"]);
@@ -449,3 +437,4 @@ export function asignarLote({
 }
 
 export { PARAMETROS_BASE };
+

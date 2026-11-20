@@ -102,6 +102,15 @@ legend { padding: 0 6px; }
 .rejilla-campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 6px 14px; }
 .campo-cupo { min-width: 0; }
 .bloque-proximamente { background: #f2f8f4; }
+.seccion-indicadores { display: grid; gap: 14px; }
+.seccion-indicadores > .encabezado-vista { margin-bottom: 2px; }
+.rejilla-indicadores { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.indicador { min-width: 0; }
+.indicador h3 { line-height: 1.35; }
+.valor-indicador { margin: 0 0 8px; color: var(--verde-oscuro); font-size: 1.8rem; font-weight: 800; }
+.indicador p { overflow-wrap: anywhere; }
+.lista-auditoria { padding-left: 24px; }
+.lista-auditoria li { margin: 10px 0; }
 .nota-demo { line-height: 1.55; }
 .vista-cuenta { max-width: 840px; margin: 0 auto; }
 .bloque-eliminacion { border-color: #a54a43; }

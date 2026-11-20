@@ -56,10 +56,11 @@ function obtenerDistanciaKm({ solicitud, hogar, reciclador, distanciasKm = {} })
   return null;
 }
 
-function solicitudesQueOcupanCupo(solicitudes, recicladorId, solicitudActualId) {
+function solicitudesQueOcupanCupo(solicitudes, recicladorId, solicitudActualId, fechaServicio) {
   return solicitudes.filter((item) =>
     item.id !== solicitudActualId &&
     item.recicladorId === recicladorId &&
+    item.fechaServicio === fechaServicio &&
     ESTADOS_QUE_OCUPAN_CUPO.has(item.estado)
   );
 }
@@ -100,6 +101,15 @@ export function validarSolicitud(solicitud, parametros = {}) {
   if (!franja?.dia || inicio === null || fin === null || inicio >= fin) {
     agregarError("franja", "FRANJA_INVALIDA", "Indica un día y una franja válida, con inicio anterior al fin.");
   }
+  if (typeof solicitud?.fechaServicio !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(solicitud.fechaServicio)) {
+    agregarError("fechaServicio", "FECHA_SERVICIO_REQUERIDA", "Selecciona la fecha del sábado en que se realizará la recolección.");
+  } else {
+    const [anio, mes, dia] = solicitud.fechaServicio.split("-").map(Number);
+    const fecha = new Date(Date.UTC(anio, mes - 1, dia));
+    if (fecha.toISOString().slice(0, 10) !== solicitud.fechaServicio || fecha.getUTCDay() !== 6) {
+      agregarError("fechaServicio", "FECHA_SERVICIO_INVALIDA", "La fecha de recolección debe ser un sábado válido.");
+    }
+  }
 
   return { valida: errores.length === 0, errores };
 }
@@ -136,7 +146,7 @@ export function evaluarCompatibilidad({
     inicioReciclador !== null && finReciclador !== null &&
     Math.max(inicioSolicitud, inicioReciclador) < Math.min(finSolicitud, finReciclador);
 
-  const asignaciones = solicitudesQueOcupanCupo(solicitudes, reciclador?.id, solicitud?.id);
+  const asignaciones = solicitudesQueOcupanCupo(solicitudes, reciclador?.id, solicitud?.id, solicitud?.fechaServicio);
   const cantidadAsignada = asignaciones.length;
   const volumenAsignado = asignaciones.reduce((total, item) => total + calcularVolumenSolicitud(item, config), 0);
   const volumenSolicitud = calcularVolumenSolicitud(solicitud, config);
@@ -186,7 +196,8 @@ export function calcularPuntaje({
   const maximoHistorico = Number(asignacionesHistoricasMaximas) || 0;
   const historicas = Number(reciclador?.asignacionesHistoricas) || 0;
   const E = maximoHistorico === 0 ? 1 : 1 - historicas / maximoHistorico;
-  const R = Number(reciclador?.tasaConfiabilidad) || 0;
+  const confiabilidad = Number(reciclador?.tasaConfiabilidad);
+  const R = Number.isFinite(confiabilidad) ? confiabilidad : 0.70;
   const S = config.pesos.P * P + config.pesos.H * H + config.pesos.E * E + config.pesos.R * R;
   return { P, H, E, R, S };
 }
@@ -201,13 +212,20 @@ export function rankearCandidatos({
   distanciasKm = {},
 }) {
   const config = combinarParametros(parametros);
-  const maxHistorico = Math.max(0, ...recicladores.map((item) => Number(item.asignacionesHistoricas) || 0));
+  // El historial observado se deriva de las solicitudes guardadas para que E cambie entre lotes.
+  const historicasPorId = new Map(recicladores.map((reciclador) => {
+    const observadas = solicitudes.filter((item) =>
+      item.id !== solicitud.id && item.recicladorId === reciclador.id && ESTADOS_QUE_OCUPAN_CUPO.has(item.estado)
+    ).length;
+    return [reciclador.id, Math.max(Number(reciclador.asignacionesHistoricas) || 0, observadas)];
+  }));
+  const maxHistorico = Math.max(0, ...historicasPorId.values());
   const evaluados = recicladores.map((reciclador) => {
     const distanciaKm = obtenerDistanciaKm({ solicitud, hogar, reciclador, distanciasKm });
     const compatibilidad = evaluarCompatibilidad({ solicitud, hogar, reciclador, solicitudes, parametros: config, distanciaKm });
     const puntaje = calcularPuntaje({
       hogar,
-      reciclador,
+      reciclador: { ...reciclador, asignacionesHistoricas: historicasPorId.get(reciclador.id) },
       cantidadAsignada: compatibilidad.cantidadAsignada,
       asignacionesHistoricasMaximas: maxHistorico,
       distanciaKm,
@@ -447,4 +465,3 @@ export function asignarLote({
 }
 
 export { PARAMETROS_BASE };
-

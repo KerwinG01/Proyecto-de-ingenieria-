@@ -37,7 +37,7 @@ function guardarEmailActivo(email) {
   }
 }
 
-export function renderizarAutenticacion(raiz, { cerrar }, panelInicial = "registro") {
+export function renderizarAutenticacion(raiz, { cerrar, seleccionarPanel = () => {} }, panelInicial = "registro") {
   let panel = panelInicial;
 
   function dibujar(mensaje = "", tipo = "info") {
@@ -55,26 +55,23 @@ export function renderizarAutenticacion(raiz, { cerrar }, panelInicial = "regist
           <p>Registro, inicio de sesión y perfil simulados para visualizar el flujo.</p>
         </header>
         <div class="aviso aviso--info nota-demo"><strong>Modo demostración:</strong> no hay servidor ni autenticación real. La contraseña solo se revisa en el formulario y no se guarda; para iniciar sesión basta con un correo registrado y una contraseña de prueba.</div>
-        <nav class="pestañas" aria-label="Vistas de cuenta">
-          <button class="boton-pestaña ${panel === "registro" ? "activo" : ""}" type="button" data-panel="registro">Registro</button>
-          <button class="boton-pestaña ${panel === "login" ? "activo" : ""}" type="button" data-panel="login">Iniciar sesión</button>
-          <button class="boton-pestaña ${panel === "perfil" ? "activo" : ""}" type="button" data-panel="perfil">Perfil</button>
-          <button class="boton-pestaña" type="button" data-cerrar>Volver a Ciudad Verde</button>
-        </nav>
+        <div class="acciones">
+          <button class="boton secundario" type="button" data-cerrar>Volver a la vista de rol</button>
+        </div>
         <p class="aviso aviso--${escaparHtml(tipo)}" data-aviso role="status" aria-live="polite" ${mensaje ? "" : "hidden"}>${escaparHtml(mensaje)}</p>
         <div id="contenido-cuenta">${contenido}</div>
       </section>`;
 
-    raiz.querySelectorAll("[data-panel]").forEach((boton) => boton.addEventListener("click", () => {
-      panel = boton.dataset.panel;
-      dibujar();
-    }));
     raiz.querySelector("[data-cerrar]").addEventListener("click", cerrar);
     raiz.querySelector("#form-registro")?.addEventListener("submit", registrar);
     raiz.querySelector("#form-login")?.addEventListener("submit", iniciarSesion);
     raiz.querySelector("#form-perfil")?.addEventListener("submit", guardarPerfil);
     raiz.querySelector("[data-cerrar-sesion]")?.addEventListener("click", cerrarSesion);
-    raiz.querySelector("[data-ir-login]")?.addEventListener("click", () => { panel = "login"; dibujar(); });
+    raiz.querySelector("[data-ir-login]")?.addEventListener("click", () => {
+      panel = "login";
+      seleccionarPanel(panel);
+      dibujar();
+    });
   }
 
   function dibujarRegistro() {
@@ -152,6 +149,7 @@ export function renderizarAutenticacion(raiz, { cerrar }, panelInicial = "regist
       return dibujar("No se pudo guardar el perfil demo en este navegador.", "error");
     }
     panel = "perfil";
+    seleccionarPanel(panel);
     dibujar("Cuenta demo creada. La contraseña no se guardó.", "exito");
   }
 
@@ -164,6 +162,7 @@ export function renderizarAutenticacion(raiz, { cerrar }, panelInicial = "regist
     if (!usuario) return dibujar("No se encontró ese correo. Crea primero un perfil demo.", "error");
     if (!guardarEmailActivo(email)) return dibujar("No se pudo iniciar la sesión demo en este navegador.", "error");
     panel = "perfil";
+    seleccionarPanel(panel);
     dibujar("Sesión demo iniciada. La contraseña no fue verificada ni almacenada.", "exito");
   }
 

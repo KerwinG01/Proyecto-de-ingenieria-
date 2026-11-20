@@ -5,12 +5,13 @@
  */
 
 const TRANSICIONES_PERMITIDAS = Object.freeze({
-  REGISTRADA: Object.freeze(["VALIDADA"]),
+  REGISTRADA: Object.freeze(["VALIDADA", "CANCELADA"]),
   VALIDADA: Object.freeze(["ASIGNADA", "EN_ESPERA", "SIN_DISPONIBILIDAD", "CANCELADA"]),
   ASIGNADA: Object.freeze(["CONFIRMADA", "ASIGNADA", "SIN_DISPONIBILIDAD", "CANCELADA"]),
-  SIN_DISPONIBILIDAD: Object.freeze(["ASIGNADA", "REPROGRAMADA"]),
-  EN_ESPERA: Object.freeze(["REPROGRAMADA"]),
+  SIN_DISPONIBILIDAD: Object.freeze(["ASIGNADA", "REPROGRAMADA", "CANCELADA"]),
+  EN_ESPERA: Object.freeze(["REPROGRAMADA", "CANCELADA"]),
   CONFIRMADA: Object.freeze(["ATENDIDA", "FALLIDA", "CANCELADA", "REPROGRAMADA"]),
+  REPROGRAMADA: Object.freeze(["VALIDADA"]),
 });
 
 const ESTADOS_CONOCIDOS = new Set([
@@ -113,7 +114,11 @@ export function transicionarEstado({ solicitud, estadoNuevo, responsable, fecha,
   return {
     ok: true,
     codigo: "TRANSICION_REGISTRADA",
-    solicitudActualizada: { ...solicitud, estado: estadoNuevo },
+    solicitudActualizada: {
+      ...solicitud,
+      estado: estadoNuevo,
+      ...(estadoNuevo === "REPROGRAMADA" ? { recicladorId: null } : {}),
+    },
     evento,
   };
 }

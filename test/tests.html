@@ -35,7 +35,9 @@
       asignarLote,
       asignarSolicitud,
       calcularPuntaje,
+      calcularTasaConfiabilidad,
       evaluarCompatibilidad,
+      rankearCandidatos,
       resolverCascada,
       validarSolicitud,
     } from "../js/motor.js";
@@ -352,6 +354,38 @@
         });
         comprobar(primerLote.asignadas.every((item) => item.recicladorId === "R1"), "Se esperaba cargar el primer historial en R1.");
         comprobar(segundoLote.asignadas.every((item) => item.recicladorId !== "R1"), "El siguiente lote debía compensar a R2/R3, que tenían menos historial.");
+      });
+
+      probar("CON-01: la confiabilidad usa atendidas/(atendidas+fallidas) y conserva 0,70 sin resultados", () => {
+        const r = reciclador("R-CON", { tasaConfiabilidad: 0.70 });
+        const sinResultados = calcularTasaConfiabilidad(r, []);
+        const solicitudesFinalizadas = [
+          ...Array.from({ length: 9 }, (_, indice) => ({ id: `CON-A-${indice}`, recicladorId: r.id, estado: "ATENDIDA" })),
+          { id: "CON-F-1", recicladorId: r.id, estado: "FALLIDA" },
+          { id: "CON-P-1", recicladorId: r.id, estado: "CONFIRMADA" },
+        ];
+        const conResultados = calcularTasaConfiabilidad(r, solicitudesFinalizadas);
+        comprobar(sinResultados === 0.70, `Se esperaba conservar 0,70; se obtuvo ${sinResultados}.`);
+        comprobar(conResultados === 0.9, `Se esperaba 9/(9+1)=0,9; se obtuvo ${conResultados}.`);
+      });
+
+      probar("CON-02: la confiabilidad calculada modifica el orden de candidatos", () => {
+        const h = hogar("H-CON02");
+        const s = solicitud("S-CON02", { hogarId: h.id });
+        const baseAnterior = Array.from({ length: 10 }, (_, indice) => ({
+          id: `CON02-H-${indice}`,
+          hogarId: h.id,
+          materiales: ["papel"],
+          bolsas: 1,
+          franja: { dia: "sábado", inicio: "08:00", fin: "12:00" },
+          fechaServicio: "2026-11-14",
+          estado: indice < 9 ? "ATENDIDA" : "FALLIDA",
+          recicladorId: "R2",
+        }));
+        const candidatos = [reciclador("R1", { cupo: 100, asignacionesHistoricas: 10 }), reciclador("R2", { cupo: 100 })];
+        const resultado = rankearCandidatos({ solicitud: s, hogar: h, recicladores: candidatos, solicitudes: baseAnterior, parametros });
+        comprobar(resultado.compatibles[0]?.reciclador.id === "R2", "Se esperaba que el R2 con tasa calculada de 0,90 quedara primero.");
+        comprobar(resultado.compatibles[0]?.puntaje.R === 0.9, `Se esperaba usar R=0,9; se obtuvo ${resultado.compatibles[0]?.puntaje.R}.`);
       });
 
       probar("EST-01: transición válida cambia estado y crea un evento con responsable y fecha", () => {

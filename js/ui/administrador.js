@@ -7,6 +7,7 @@ import {
   validarParametros,
 } from "../parametros.js";
 import { escaparHtml, mostrarAviso } from "./comun.js";
+import { calcularIndicadores } from "../indicadores.js";
 
 const SOLICITUD_DEMO_PARA_ELIMINAR = "SOL-4ccecacb-0d98-4934-a64c-654d1018a481";
 
@@ -16,6 +17,7 @@ export function renderizarAdministrador(raiz, contexto) {
   function dibujar() {
     const estado = contexto.obtenerEstado();
     const parametros = estado.parametros || crearParametrosPredeterminados();
+    const indicadores = calcularIndicadores(estado);
     const recicladores = estado.recicladores.map((reciclador) => `
       <div class="campo-cupo">
         <label for="cupo-${escaparHtml(reciclador.id)}">Cupo de ${escaparHtml(reciclador.nombre || reciclador.id)}</label>
@@ -71,15 +73,68 @@ export function renderizarAdministrador(raiz, contexto) {
           </div>
         </form>
         ${dibujarEliminacionDemo(estado)}
-        <section class="tarjeta bloque-proximamente" aria-labelledby="indicadores-titulo">
-          <h2 id="indicadores-titulo">Indicadores y modo de prueba</h2>
-          <p>El panel de indicadores corresponde a E6 y las simulaciones al modo de prueba de E7.</p>
+        <section class="seccion-indicadores" aria-labelledby="indicadores-titulo">
+          <header class="encabezado-vista">
+            <p class="ceja">Seguimiento del piloto</p>
+            <h2 id="indicadores-titulo">Indicadores del sistema</h2>
+            <p>Se recalculan desde el historial de eventos guardado en este navegador.</p>
+          </header>
+          ${dibujarIndicadores(indicadores)}
+          <section class="tarjeta bloque-proximamente" aria-labelledby="modo-prueba-titulo">
+            <h3 id="modo-prueba-titulo">Modo de prueba</h3>
+            <p>Las simulaciones, mediciones de rendimiento y exportación CSV se implementan en E7.</p>
+          </section>
         </section>
       </section>`;
 
     raiz.querySelector("#form-parametros").addEventListener("submit", guardar);
     raiz.querySelector("#restaurar-parametros").addEventListener("click", restaurar);
     raiz.querySelector("[data-eliminar-solicitud-demo]")?.addEventListener("click", eliminarSolicitudDemo);
+  }
+
+  function porcentaje(valor) {
+    return valor === null ? "No calculable: sin casos" : `${(valor * 100).toFixed(1)} %`;
+  }
+
+  function dibujarIndicadores(datos) {
+    const k2 = datos.K2;
+    const k3 = datos.K3;
+    const k6 = datos.K6;
+    const k7 = datos.K7;
+    const conteos = Object.entries(k7.conteos).map(([id, cantidad]) =>
+      `<li><strong>${escaparHtml(id)}</strong>: ${cantidad} solicitud(es) con asignación vigente</li>`
+    ).join("") || "<li>No hay recicladores registrados.</li>";
+    const auditoria = k6.detalles.length ? k6.detalles.map((detalle) => `
+      <li>
+        Solicitud <strong>${escaparHtml(detalle.solicitudId)}</strong> · reciclador <strong>${escaparHtml(detalle.recicladorId || "sin identificar")}</strong> · ${escaparHtml(detalle.fecha)}:
+        ${detalle.sinTrazabilidad ? "sin trazabilidad suficiente para recalcular compatibilidad" : detalle.compatible ? "compatible" : `incompatible: ${escaparHtml(detalle.motivos.join(" "))}`}
+      </li>`).join("") : "<li>No hay eventos de asignación para auditar.</li>";
+
+    return `
+      <div class="rejilla-indicadores">
+        <article class="tarjeta indicador">
+          <h3>K2 · Tiempo hasta la confirmación</h3>
+          <p class="valor-indicador">${k2.valor === null ? "Sin datos" : `${k2.valor.toFixed(2)} h`}</p>
+          <p>Promedio de VALIDADA a CONFIRMADA. Casos incluidos: ${k2.cantidad}.</p>
+        </article>
+        <article class="tarjeta indicador">
+          <h3>K3 · Resultados de solicitudes</h3>
+          <p><strong>Fallidas / confirmadas:</strong> ${porcentaje(k3.fallidaSobreConfirmada.valor)} (${k3.fallidaSobreConfirmada.numerador}/${k3.fallidaSobreConfirmada.denominador})</p>
+          <p><strong>Canceladas / registradas:</strong> ${porcentaje(k3.canceladaSobreRegistrada.valor)} (${k3.canceladaSobreRegistrada.numerador}/${k3.canceladaSobreRegistrada.denominador})</p>
+        </article>
+        <article class="tarjeta indicador">
+          <h3>K6 · Auditoría de asignaciones</h3>
+          <p><strong>Asignaciones revisadas:</strong> ${k6.totalAsignaciones}</p>
+          <p><strong>Incompatibles:</strong> ${k6.incompatibles} · <strong>Duplicadas:</strong> ${k6.duplicadas} · <strong>Sin trazabilidad:</strong> ${k6.sinTrazabilidad}</p>
+          <details><summary>Ver revisión por solicitud</summary><ul class="lista-auditoria">${auditoria}</ul></details>
+        </article>
+        <article class="tarjeta indicador">
+          <h3>K7 · Equilibrio de asignaciones</h3>
+          <p><strong>Coeficiente de variación (CV):</strong> ${porcentaje(k7.coeficienteVariacion)}</p>
+          <p>Media: ${k7.media.toFixed(2)} · desviación estándar: ${k7.desviacion.toFixed(2)} solicitudes por reciclador.</p>
+          <ul>${conteos}</ul>
+        </article>
+      </div>`;
   }
 
   function dibujarEliminacionDemo(estado) {

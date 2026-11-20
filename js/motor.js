@@ -3,6 +3,7 @@
  * No accede al DOM, a localStorage ni al reloj del sistema.
  */
 import { PARAMETROS_POR_DEFECTO as PARAMETROS_BASE } from "./parametros.js";
+import { convertirAMinutos, normalizarTexto, obtenerDistanciaKm } from "./utilidades.js";
 
 const ESTADOS_QUE_OCUPAN_CUPO = new Set(["ASIGNADA", "CONFIRMADA", "ATENDIDA", "FALLIDA"]);
 const RESULTADOS_INTENTO = new Set(["aceptado", "rechazado", "vencido"]);
@@ -18,20 +19,7 @@ function combinarParametros(parametros = {}) {
   };
 }
 
-function normalizar(valor) {
-  return String(valor ?? "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-    .toLocaleLowerCase("es");
-}
-
-function convertirAMinutos(hora) {
-  if (typeof hora !== "string" || !/^\d{1,2}:\d{2}$/.test(hora)) return null;
-  const [horas, minutos] = hora.split(":").map(Number);
-  if (horas > 23 || minutos > 59) return null;
-  return horas * 60 + minutos;
-}
+const normalizar = normalizarTexto;
 
 function compararIds(a, b) {
   const idA = String(a.id);
@@ -39,21 +27,6 @@ function compararIds(a, b) {
   if (idA < idB) return -1;
   if (idA > idB) return 1;
   return 0;
-}
-
-function obtenerDistanciaKm({ solicitud, hogar, reciclador, distanciasKm = {} }) {
-  const claves = [
-    `${hogar?.id}|${reciclador.id}`,
-    `${solicitud.id}|${reciclador.id}`,
-    `${hogar?.microzona}|${reciclador.microzona}`,
-  ];
-  for (const clave of claves) {
-    const valor = distanciasKm[clave];
-    if (valor !== null && valor !== undefined && valor !== "" && Number.isFinite(Number(valor))) {
-      return Number(valor);
-    }
-  }
-  return null;
 }
 
 function solicitudesQueOcupanCupo(solicitudes, recicladorId, solicitudActualId, fechaServicio) {
@@ -69,6 +42,87 @@ function solicitudesQueOcupanCupo(solicitudes, recicladorId, solicitudActualId, 
 export function calcularVolumenSolicitud(solicitud, parametros = {}) {
   const { volumenBolsa } = combinarParametros(parametros);
   return Number(solicitud?.bolsas) * volumenBolsa;
+}
+
+/**
+ * Índice de ocupación por reciclador y fecha de servicio.
+ * Evita recorrer todas las solicitudes por cada reciclador en cada asignación:
+ * con el índice, el costo por solicitud pasa de O(n · R) a O(R).
+ */
+export function crearIndiceOcupacion(solicitudes = [], parametros = {}) {
+  const indice = {
+    volumenBolsa: combinarParametros(parametros).volumenBolsa,
+    porReciclador: new Map(),
+    porSolicitud: new Map(),
+  };
+  for (const solicitud of solicitudes) registrarEnIndice(indice, solicitud);
+  return indice;
+}
+
+function agregadoDe(indice, recicladorId) {
+  if (!indice.porReciclador.has(recicladorId)) {
+    indice.porReciclador.set(recicladorId, { ocupadas: 0, atendidas: 0, fallidas: 0, porFecha: new Map() });
+  }
+  return indice.porReciclador.get(recicladorId);
+}
+
+function aplicarAporte(indice, aporte, signo) {
+  if (!aporte?.recicladorId) return;
+  const agregado = agregadoDe(indice, aporte.recicladorId);
+  if (aporte.estado === "ATENDIDA") agregado.atendidas += signo;
+  if (aporte.estado === "FALLIDA") agregado.fallidas += signo;
+  if (!aporte.ocupa) return;
+  agregado.ocupadas += signo;
+  const fecha = agregado.porFecha.get(aporte.fechaServicio) || { cantidad: 0, volumen: 0 };
+  fecha.cantidad += signo;
+  fecha.volumen += signo * aporte.volumen;
+  agregado.porFecha.set(aporte.fechaServicio, fecha);
+}
+
+/** Agrega o actualiza una solicitud en el índice (reemplaza su aporte anterior si ya existía). */
+export function registrarEnIndice(indice, solicitud) {
+  if (!solicitud?.id) return indice;
+  aplicarAporte(indice, indice.porSolicitud.get(solicitud.id), -1);
+  const aporte = {
+    recicladorId: solicitud.recicladorId ?? null,
+    estado: solicitud.estado,
+    fechaServicio: solicitud.fechaServicio,
+    ocupa: ESTADOS_QUE_OCUPAN_CUPO.has(solicitud.estado) && solicitud.recicladorId != null,
+    volumen: Number(solicitud.bolsas) * indice.volumenBolsa,
+  };
+  indice.porSolicitud.set(solicitud.id, aporte);
+  aplicarAporte(indice, aporte, 1);
+  return indice;
+}
+
+function aporteExcluido(indice, solicitudId, recicladorId) {
+  const aporte = indice.porSolicitud.get(solicitudId);
+  return aporte && aporte.ocupa && aporte.recicladorId === recicladorId ? aporte : null;
+}
+
+function ocupacionDesdeIndice(indice, recicladorId, fechaServicio, solicitudActualId) {
+  const fecha = indice.porReciclador.get(recicladorId)?.porFecha.get(fechaServicio) || { cantidad: 0, volumen: 0 };
+  const propio = aporteExcluido(indice, solicitudActualId, recicladorId);
+  const mismoDia = propio && propio.fechaServicio === fechaServicio;
+  return {
+    cantidadAsignada: fecha.cantidad - (mismoDia ? 1 : 0),
+    volumenAsignado: fecha.volumen - (mismoDia ? propio.volumen : 0),
+  };
+}
+
+function historicasDesdeIndice(indice, recicladorId, solicitudActualId) {
+  const ocupadas = indice.porReciclador.get(recicladorId)?.ocupadas || 0;
+  return ocupadas - (aporteExcluido(indice, solicitudActualId, recicladorId) ? 1 : 0);
+}
+
+function confiabilidadDesdeIndice(indice, reciclador) {
+  const agregado = indice.porReciclador.get(reciclador?.id);
+  const finalizadas = (agregado?.atendidas || 0) + (agregado?.fallidas || 0);
+  if (finalizadas === 0) {
+    const valorBase = Number(reciclador?.tasaConfiabilidad);
+    return Number.isFinite(valorBase) ? valorBase : 0.70;
+  }
+  return agregado.atendidas / finalizadas;
 }
 
 /** Devuelve todos los errores de formulario sin modificar la solicitud. */
@@ -122,6 +176,7 @@ export function evaluarCompatibilidad({
   solicitudes = [],
   parametros = {},
   distanciaKm = null,
+  ocupacion = null,
 }) {
   const config = combinarParametros(parametros);
   const mismaMicrozona = normalizar(hogar?.microzona) === normalizar(reciclador?.microzona);
@@ -146,9 +201,15 @@ export function evaluarCompatibilidad({
     inicioReciclador !== null && finReciclador !== null &&
     Math.max(inicioSolicitud, inicioReciclador) < Math.min(finSolicitud, finReciclador);
 
-  const asignaciones = solicitudesQueOcupanCupo(solicitudes, reciclador?.id, solicitud?.id, solicitud?.fechaServicio);
-  const cantidadAsignada = asignaciones.length;
-  const volumenAsignado = asignaciones.reduce((total, item) => total + calcularVolumenSolicitud(item, config), 0);
+  let cantidadAsignada;
+  let volumenAsignado;
+  if (ocupacion) {
+    ({ cantidadAsignada, volumenAsignado } = ocupacion);
+  } else {
+    const asignaciones = solicitudesQueOcupanCupo(solicitudes, reciclador?.id, solicitud?.id, solicitud?.fechaServicio);
+    cantidadAsignada = asignaciones.length;
+    volumenAsignado = asignaciones.reduce((total, item) => total + calcularVolumenSolicitud(item, config), 0);
+  }
   const volumenSolicitud = calcularVolumenSolicitud(solicitud, config);
   const cupoValido = Number.isFinite(Number(reciclador?.cupo)) && Number(reciclador.cupo) > 0;
   const K = cupoValido && cantidadAsignada < Number(reciclador.cupo) &&
@@ -223,23 +284,27 @@ export function rankearCandidatos({
   solicitudes = [],
   parametros = {},
   distanciasKm = {},
+  indice = null,
 }) {
   const config = combinarParametros(parametros);
   // El historial observado se deriva de las solicitudes guardadas para que E cambie entre lotes.
   const historicasPorId = new Map(recicladores.map((reciclador) => {
-    const observadas = solicitudes.filter((item) =>
-      item.id !== solicitud.id && item.recicladorId === reciclador.id && ESTADOS_QUE_OCUPAN_CUPO.has(item.estado)
-    ).length;
+    const observadas = indice
+      ? historicasDesdeIndice(indice, reciclador.id, solicitud.id)
+      : solicitudes.filter((item) =>
+        item.id !== solicitud.id && item.recicladorId === reciclador.id && ESTADOS_QUE_OCUPAN_CUPO.has(item.estado)
+      ).length;
     return [reciclador.id, Math.max(Number(reciclador.asignacionesHistoricas) || 0, observadas)];
   }));
   const confiabilidadPorId = new Map(recicladores.map((reciclador) => [
     reciclador.id,
-    calcularTasaConfiabilidad(reciclador, solicitudes),
+    indice ? confiabilidadDesdeIndice(indice, reciclador) : calcularTasaConfiabilidad(reciclador, solicitudes),
   ]));
   const maxHistorico = Math.max(0, ...historicasPorId.values());
   const evaluados = recicladores.map((reciclador) => {
     const distanciaKm = obtenerDistanciaKm({ solicitud, hogar, reciclador, distanciasKm });
-    const compatibilidad = evaluarCompatibilidad({ solicitud, hogar, reciclador, solicitudes, parametros: config, distanciaKm });
+    const ocupacion = indice ? ocupacionDesdeIndice(indice, reciclador.id, solicitud.fechaServicio, solicitud.id) : null;
+    const compatibilidad = evaluarCompatibilidad({ solicitud, hogar, reciclador, solicitudes, parametros: config, distanciaKm, ocupacion });
     const puntaje = calcularPuntaje({
       hogar,
       reciclador: {
@@ -261,12 +326,13 @@ export function rankearCandidatos({
   return { compatibles, evaluados };
 }
 
-function solicitudYaAsignada(solicitud, solicitudes) {
-  return (solicitud.recicladorId !== null && solicitud.recicladorId !== undefined) ||
-    ESTADOS_QUE_OCUPAN_CUPO.has(solicitud.estado) ||
-    solicitudes.some((item) => item.id === solicitud.id &&
-      item.recicladorId !== null && item.recicladorId !== undefined &&
-      ESTADOS_QUE_OCUPAN_CUPO.has(item.estado));
+function solicitudYaAsignada(solicitud, solicitudes, indice = null) {
+  if ((solicitud.recicladorId !== null && solicitud.recicladorId !== undefined) ||
+      ESTADOS_QUE_OCUPAN_CUPO.has(solicitud.estado)) return true;
+  if (indice) return Boolean(indice.porSolicitud.get(solicitud.id)?.ocupa);
+  return solicitudes.some((item) => item.id === solicitud.id &&
+    item.recicladorId !== null && item.recicladorId !== undefined &&
+    ESTADOS_QUE_OCUPAN_CUPO.has(item.estado));
 }
 
 /** Planifica una primera oferta sin mutar datos ni registrar eventos. */
@@ -277,6 +343,7 @@ export function asignarSolicitud({
   solicitudes = [],
   parametros = {},
   distanciasKm = {},
+  indice = null,
 }) {
   const validacion = validarSolicitud(solicitud, parametros);
   if (!validacion.valida) {
@@ -288,7 +355,7 @@ export function asignarSolicitud({
       solicitudActualizada: solicitud ? { ...solicitud } : null,
     };
   }
-  if (solicitudYaAsignada(solicitud, solicitudes)) {
+  if (solicitudYaAsignada(solicitud, solicitudes, indice)) {
     return {
       ok: false,
       codigo: "DUPLICADA",
@@ -298,7 +365,7 @@ export function asignarSolicitud({
     };
   }
 
-  const { compatibles, evaluados } = rankearCandidatos({ solicitud, hogar, recicladores, solicitudes, parametros, distanciasKm });
+  const { compatibles, evaluados } = rankearCandidatos({ solicitud, hogar, recicladores, solicitudes, parametros, distanciasKm, indice });
   if (compatibles.length === 0) {
     const coincideSinCapacidad = evaluados.some(({ compatibilidad }) =>
       compatibilidad.condiciones.Z && compatibilidad.condiciones.M &&
@@ -443,7 +510,11 @@ export function resolverCascada({
   };
 }
 
-/** Asigna solicitudes por orden y deja EN_ESPERA el excedente por capacidad. */
+/**
+ * Asigna solicitudes por orden y deja EN_ESPERA el excedente por capacidad.
+ * Con usarIndice = true mantiene un índice de ocupación incremental; con false
+ * recorre la lista completa en cada solicitud (método de referencia para ESC-01).
+ */
 export function asignarLote({
   solicitudes: lote,
   hogares,
@@ -451,6 +522,7 @@ export function asignarLote({
   solicitudesExistentes = [],
   parametros = {},
   distanciasKm = {},
+  usarIndice = true,
 }) {
   const asignadas = [];
   const enEspera = [];
@@ -458,10 +530,15 @@ export function asignarLote({
   const invalidas = [];
   const base = [...solicitudesExistentes];
   const hogaresPorId = new Map(hogares.map((hogar) => [hogar.id, hogar]));
+  const indice = usarIndice ? crearIndiceOcupacion(base, parametros) : null;
+  const agregarABase = (solicitud) => {
+    base.push(solicitud);
+    if (indice) registrarEnIndice(indice, solicitud);
+  };
 
   for (const solicitud of lote) {
     const hogar = hogaresPorId.get(solicitud.hogarId);
-    const resultado = asignarSolicitud({ solicitud, hogar, recicladores, solicitudes: base, parametros, distanciasKm });
+    const resultado = asignarSolicitud({ solicitud, hogar, recicladores, solicitudes: base, parametros, distanciasKm, indice });
 
     if (resultado.codigo === "SOLICITUD_INVALIDA" || resultado.codigo === "DUPLICADA") {
       invalidas.push({ solicitud: resultado.solicitudActualizada, resultado });
@@ -469,16 +546,16 @@ export function asignarLote({
     }
     if (resultado.ok) {
       asignadas.push(resultado.solicitudActualizada);
-      base.push(resultado.solicitudActualizada);
+      agregarABase(resultado.solicitudActualizada);
       continue;
     }
     if (resultado.codigo === "CAPACIDAD_AGOTADA") {
       const solicitudEnEspera = { ...solicitud, estado: "EN_ESPERA", recicladorId: null };
       enEspera.push(solicitudEnEspera);
-      base.push(solicitudEnEspera);
+      agregarABase(solicitudEnEspera);
     } else {
       sinDisponibilidad.push(resultado.solicitudActualizada);
-      base.push(resultado.solicitudActualizada);
+      agregarABase(resultado.solicitudActualizada);
     }
   }
 

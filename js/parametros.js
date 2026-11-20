@@ -3,6 +3,8 @@
  * La validación y normalización son funciones puras; solo leer/guardar usa storage.
  */
 
+import { normalizarTexto } from "./utilidades.js";
+
 export const CLAVE_PARAMETROS = "ciudadVerde.parametros.v1";
 
 export const PARAMETROS_POR_DEFECTO = Object.freeze({
@@ -18,14 +20,6 @@ export const PARAMETROS_POR_DEFECTO = Object.freeze({
   p: 0.70,
   distanciaAdyacenciaKm: 2,
 });
-
-function normalizarTexto(valor) {
-  return String(valor ?? "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-    .toLocaleLowerCase("es");
-}
 
 /** Devuelve una copia nueva de la configuración base. */
 export function crearParametrosPredeterminados() {

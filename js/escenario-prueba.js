@@ -4,24 +4,13 @@
  * y las mismas reglas que las vistas; luego lo guarda donde lo lee index.html.
  * Así, lo que se prueba en tests.html puede verificarse en las pantallas.
  */
-import { crearEstadoInicial, crearHogar, crearReciclador, crearSolicitud } from "./modelo.js";
+import { crearEstadoInicial, crearHogar, crearSolicitud } from "./modelo.js";
 import { asignarSolicitud, calcularTasaConfiabilidad, resolverCascada } from "./motor.js";
 import { transicionarEstado } from "./estados.js";
 import { leerParametros } from "./parametros.js";
+import { crearRecicladoresPiloto } from "./datos-piloto.js";
+import { FRANJA_PILOTO, fechaSabadoDesde } from "./utilidades.js";
 import { guardarEstado } from "./ui/servicios.js";
-
-const FRANJA_PILOTO = { dia: "sábado", inicio: "08:00", fin: "12:00" };
-const MATERIALES = ["papel", "plástico", "vidrio", "metal"];
-
-/** Fecha (AAAA-MM-DD) del próximo sábado, u hoy si es sábado. */
-function proximoSabado(base = new Date()) {
-  const fecha = new Date(base);
-  fecha.setHours(0, 0, 0, 0);
-  fecha.setDate(fecha.getDate() + ((6 - fecha.getDay() + 7) % 7));
-  const mes = String(fecha.getMonth() + 1).padStart(2, "0");
-  const dia = String(fecha.getDate()).padStart(2, "0");
-  return `${fecha.getFullYear()}-${mes}-${dia}`;
-}
 
 function crearBase(parametros) {
   const estado = crearEstadoInicial(parametros);
@@ -37,15 +26,7 @@ function crearBase(parametros) {
     crearHogar({ id: "H-CJ", microzona: "Ciudad Jardín", alias: "Hogar Ciudad Jardín", referenciaEntrega: "Referencia de prueba", consentimiento: true }),
     crearHogar({ id: "H-MC", microzona: "Microzona C", alias: "Hogar Microzona C (sin cobertura)", referenciaEntrega: "Referencia de prueba", consentimiento: true }),
   ];
-  const reciclador = (id, microzona, materiales) => crearReciclador({
-    id, nombre: `Reciclador ${id}`, microzona, materiales, franja: { ...FRANJA_PILOTO }, cupo: 26,
-  });
-  estado.recicladores = [
-    reciclador("R1", "San Eduardo", MATERIALES),
-    reciclador("R2", "San Eduardo", ["papel", "plástico", "metal"]),
-    reciclador("R3", "San Eduardo", MATERIALES),
-    reciclador("R4", "Ciudad Jardín", MATERIALES),
-  ];
+  estado.recicladores = crearRecicladoresPiloto();
   return estado;
 }
 
@@ -68,11 +49,10 @@ function exigir(resultado, contexto) {
  * Crea el estado completo del escenario. Función pura salvo por la fecha base.
  * Devuelve { estado, casos } para mostrar qué verificar en cada vista.
  */
-export function crearEscenarioPrueba({ fechaBase = new Date() } = {}) {
-  const parametros = leerParametros().parametros;
+export function crearEscenarioPrueba({ fechaBase = new Date(), parametros = leerParametros().parametros } = {}) {
   const estado = crearBase(parametros);
   const ahora = crearReloj(fechaBase.getTime());
-  const fechaServicio = proximoSabado(fechaBase);
+  const fechaServicio = fechaSabadoDesde(fechaBase);
   const casos = [];
 
   const hogarDe = (id) => estado.hogares.find((h) => h.id === id);

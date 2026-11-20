@@ -4,6 +4,18 @@ import { leerParametros } from "../parametros.js";
 
 export const CLAVE_ESTADO = "ciudadVerde.estado.v1";
 
+function sabadoDeRegistro(solicitudId, eventos) {
+  const evento = eventos.find((item) => item.solicitudId === solicitudId && ["REGISTRADA", "VALIDADA"].includes(item.estadoNuevo));
+  const marca = evento ? new Date(evento.fecha) : null;
+  if (!marca || Number.isNaN(marca.getTime())) return null;
+  marca.setHours(0, 0, 0, 0);
+  marca.setDate(marca.getDate() + ((6 - marca.getDay() + 7) % 7));
+  const anio = marca.getFullYear();
+  const mes = String(marca.getMonth() + 1).padStart(2, "0");
+  const dia = String(marca.getDate()).padStart(2, "0");
+  return `${anio}-${mes}-${dia}`;
+}
+
 function crearDatosIniciales() {
   const configuracion = leerParametros().parametros;
   const estado = crearEstadoInicial(configuracion);
@@ -33,7 +45,7 @@ function crearDatosIniciales() {
       franja: { dia: "sábado", inicio: "08:00", fin: "12:00" }, cupo: 26,
     }),
     crearReciclador({
-      id: "R4", nombre: "Juan Guillermo Garcia Garcia", microzona: "Ciudad Jardín",
+      id: "R4", nombre: "Reciclador R4", microzona: "Ciudad Jardín",
       materiales: ["papel", "plástico", "vidrio", "metal"],
       franja: { dia: "sábado", inicio: "08:00", fin: "12:00" }, cupo: 26,
     }),
@@ -59,13 +71,20 @@ export function leerEstado(almacen = null) {
     if (contenido === null) return { estado: crearDatosIniciales(), aviso: null };
     const guardado = JSON.parse(contenido);
     const base = crearEstadoInicial(leerParametros().parametros);
+    const eventos = Array.isArray(guardado.eventos) ? guardado.eventos : [];
     const estado = {
       ...base,
       ...guardado,
       hogares: Array.isArray(guardado.hogares) ? guardado.hogares : [],
-      recicladores: Array.isArray(guardado.recicladores) ? guardado.recicladores : [],
-      solicitudes: Array.isArray(guardado.solicitudes) ? guardado.solicitudes : [],
-      eventos: Array.isArray(guardado.eventos) ? guardado.eventos : [],
+      recicladores: Array.isArray(guardado.recicladores) ? guardado.recicladores.map((reciclador) => ({
+        ...reciclador,
+        ...(reciclador.id === "R4" ? { nombre: "Reciclador R4" } : {}),
+      })) : [],
+      solicitudes: Array.isArray(guardado.solicitudes) ? guardado.solicitudes.map((solicitud) => ({
+        ...solicitud,
+        fechaServicio: solicitud.fechaServicio || sabadoDeRegistro(solicitud.id, eventos),
+      })) : [],
+      eventos,
       mensajes: Array.isArray(guardado.mensajes) ? guardado.mensajes : [],
       distanciasKm: guardado.distanciasKm && typeof guardado.distanciasKm === "object" ? guardado.distanciasKm : {},
       parametros: leerParametros().parametros,

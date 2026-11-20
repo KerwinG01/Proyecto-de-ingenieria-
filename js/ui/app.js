@@ -3,6 +3,7 @@ import { renderizarReciclador } from "./reciclador.js";
 import { renderizarFacilitador } from "./facilitador.js";
 import { renderizarAdministrador } from "./administrador.js";
 import { renderizarAutenticacion } from "./autenticacion.js";
+import { renderizarInicio } from "./inicio.js";
 import { guardarEstado, leerEstado } from "./servicios.js";
 import { escaparHtml, fechaLegible } from "./comun.js";
 
@@ -16,6 +17,7 @@ let panelCuenta = null;
 let rolActivo = selectorRol.value;
 
 const vistas = {
+  inicio: renderizarInicio,
   ciudadano: renderizarCiudadano,
   reciclador: renderizarReciclador,
   facilitador: renderizarFacilitador,
@@ -80,6 +82,13 @@ selectorRol.addEventListener("change", () => {
   panelCuenta = null;
   anunciar("Rol simulado cambiado. No se requiere autenticación.", "info");
   dibujarVista();
+});
+
+elementoVista.addEventListener("click", (evento) => {
+  const boton = evento.target.closest("[data-ir-rol]");
+  if (!boton) return;
+  selectorRol.value = boton.dataset.irRol;
+  selectorRol.dispatchEvent(new Event("change"));
 });
 
 dibujarBandeja();

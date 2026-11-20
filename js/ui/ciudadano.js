@@ -1,10 +1,9 @@
 import { crearSolicitud } from "../modelo.js";
 import { asignarSolicitud, validarSolicitud } from "../motor.js";
 import { transicionarEstado } from "../estados.js";
+import { FRANJA_PILOTO } from "../utilidades.js";
 import { crearId, crearMensaje, fechaActualIso } from "./servicios.js";
 import { escaparHtml, fechaLegible, fechaSabadoProximo, textoEstado, mostrarAviso } from "./comun.js";
-
-const FRANJA_PILOTO = { dia: "sábado", inicio: "08:00", fin: "12:00" };
 
 export function renderizarCiudadano(raiz, contexto) {
   let pestaña = "nueva";

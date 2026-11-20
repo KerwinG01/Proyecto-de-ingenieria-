@@ -1,57 +1,19 @@
 /** Persistencia y datos de demostración compartidos por las vistas. */
-import { crearEstadoInicial, crearHogar, crearReciclador } from "../modelo.js";
+import { crearEstadoInicial } from "../modelo.js";
 import { leerParametros } from "../parametros.js";
+import { crearEstadoPiloto } from "../datos-piloto.js";
+import { fechaSabadoDesde } from "../utilidades.js";
 
 export const CLAVE_ESTADO = "ciudadVerde.estado.v1";
 
 function sabadoDeRegistro(solicitudId, eventos) {
   const evento = eventos.find((item) => item.solicitudId === solicitudId && ["REGISTRADA", "VALIDADA"].includes(item.estadoNuevo));
-  const marca = evento ? new Date(evento.fecha) : null;
-  if (!marca || Number.isNaN(marca.getTime())) return null;
-  marca.setHours(0, 0, 0, 0);
-  marca.setDate(marca.getDate() + ((6 - marca.getDay() + 7) % 7));
-  const anio = marca.getFullYear();
-  const mes = String(marca.getMonth() + 1).padStart(2, "0");
-  const dia = String(marca.getDate()).padStart(2, "0");
-  return `${anio}-${mes}-${dia}`;
+  return evento ? fechaSabadoDesde(evento.fecha) : null;
 }
 
-function crearDatosIniciales() {
-  const configuracion = leerParametros().parametros;
-  const estado = crearEstadoInicial(configuracion);
-  estado.hogares = [
-    crearHogar({
-      id: "H-001",
-      microzona: "San Eduardo",
-      alias: "Hogar de demostración",
-      referenciaEntrega: "Referencia por confirmar",
-      consentimiento: true,
-    }),
-  ];
-  estado.recicladores = [
-    crearReciclador({
-      id: "R1", nombre: "Reciclador R1", microzona: "San Eduardo",
-      materiales: ["papel", "plástico", "vidrio", "metal"],
-      franja: { dia: "sábado", inicio: "08:00", fin: "12:00" }, cupo: 26,
-    }),
-    crearReciclador({
-      id: "R2", nombre: "Reciclador R2", microzona: "San Eduardo",
-      materiales: ["papel", "plástico", "metal"],
-      franja: { dia: "sábado", inicio: "08:00", fin: "12:00" }, cupo: 26,
-    }),
-    crearReciclador({
-      id: "R3", nombre: "Reciclador R3", microzona: "San Eduardo",
-      materiales: ["papel", "plástico", "vidrio", "metal"],
-      franja: { dia: "sábado", inicio: "08:00", fin: "12:00" }, cupo: 26,
-    }),
-    crearReciclador({
-      id: "R4", nombre: "Reciclador R4", microzona: "Ciudad Jardín",
-      materiales: ["papel", "plástico", "vidrio", "metal"],
-      franja: { dia: "sábado", inicio: "08:00", fin: "12:00" }, cupo: 26,
-    }),
-  ];
-  estado.distanciasKm = {};
-  return estado;
+/** Estado base de la demostración, con los parámetros guardados en este navegador. */
+export function crearDatosIniciales() {
+  return crearEstadoPiloto(leerParametros().parametros);
 }
 
 /** Carga estado persistido o crea una base de demostración para el piloto. */

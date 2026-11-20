@@ -7,10 +7,11 @@ import {
   validarParametros,
 } from "../parametros.js";
 import { escaparHtml, mostrarAviso } from "./comun.js";
-import { calcularIndicadores } from "../indicadores.js";
+import { calcularIndicadores, evaluarMetas } from "../indicadores.js";
 import { calcularTasaConfiabilidad } from "../motor.js";
-
-const SOLICITUD_DEMO_PARA_ELIMINAR = "SOL-4ccecacb-0d98-4934-a64c-654d1018a481";
+import { crearEscenarioPrueba } from "../escenario-prueba.js";
+import { crearDatosIniciales } from "./servicios.js";
+import { descartarKpiCalculados, renderizarModoPrueba } from "./modo-prueba.js";
 
 export function renderizarAdministrador(raiz, contexto) {
   dibujar();
@@ -81,7 +82,7 @@ export function renderizarAdministrador(raiz, contexto) {
             <button class="boton secundario" type="button" id="restaurar-parametros">Restablecer parámetros base</button>
           </div>
         </form>
-        ${dibujarEliminacionDemo(estado)}
+        ${dibujarDatosDemo(estado)}
         <section class="seccion-indicadores" aria-labelledby="indicadores-titulo">
           <header class="encabezado-vista">
             <p class="ceja">Seguimiento del piloto</p>
@@ -89,20 +90,24 @@ export function renderizarAdministrador(raiz, contexto) {
             <p>Se recalculan desde el historial de eventos guardado en este navegador.</p>
           </header>
           ${dibujarIndicadores(indicadores)}
-          <section class="tarjeta bloque-proximamente" aria-labelledby="modo-prueba-titulo">
-            <h3 id="modo-prueba-titulo">Modo de prueba</h3>
-            <p>Las simulaciones, mediciones de rendimiento y exportación CSV se implementan en E7.</p>
-          </section>
+          <div id="contenedor-modo-prueba"></div>
         </section>
       </section>`;
 
     raiz.querySelector("#form-parametros").addEventListener("submit", guardar);
     raiz.querySelector("#restaurar-parametros").addEventListener("click", restaurar);
-    raiz.querySelector("[data-eliminar-solicitud-demo]")?.addEventListener("click", eliminarSolicitudDemo);
+    raiz.querySelector("[data-cargar-escenario]").addEventListener("click", cargarEscenario);
+    raiz.querySelector("[data-restablecer-demo]").addEventListener("click", restablecerDemo);
+    renderizarModoPrueba(raiz.querySelector("#contenedor-modo-prueba"), { obtenerEstado: contexto.obtenerEstado });
   }
 
   function porcentaje(valor) {
     return valor === null ? "No calculable: sin casos" : `${(valor * 100).toFixed(1)} %`;
+  }
+
+  function lineaMeta(fila) {
+    const estado = fila.cumple === null ? "Sin datos suficientes" : fila.cumple ? "✓ Cumple" : "✕ No cumple";
+    return `<p class="meta-indicador"><strong>Meta ${escaparHtml(fila.metaTexto)}:</strong> ${estado}</p>`;
   }
 
   function dibujarIndicadores(datos) {
@@ -110,9 +115,10 @@ export function renderizarAdministrador(raiz, contexto) {
     const k3 = datos.K3;
     const k6 = datos.K6;
     const k7 = datos.K7;
-    const conteos = Object.entries(k7.conteos).map(([id, cantidad]) =>
-      `<li><strong>${escaparHtml(id)}</strong>: ${cantidad} solicitud(es) con asignación vigente</li>`
-    ).join("") || "<li>No hay recicladores registrados.</li>";
+    const metas = Object.fromEntries(evaluarMetas(datos).map((fila) => [fila.id, fila]));
+    const grupos = k7.porMicrozona.map((grupo) => `
+      <li><strong>${escaparHtml(grupo.microzona)}</strong>: ${Object.entries(grupo.conteos).map(([id, cantidad]) => `${escaparHtml(id)} = ${cantidad}`).join(" · ")}
+        ${grupo.comparable ? `· CV ${porcentaje(grupo.coeficienteVariacion)}` : "· un solo reciclador, sin comparación"}</li>`).join("") || "<li>No hay recicladores registrados.</li>";
     const auditoria = k6.detalles.length ? k6.detalles.map((detalle) => `
       <li>
         Solicitud <strong>${escaparHtml(detalle.solicitudId)}</strong> · reciclador <strong>${escaparHtml(detalle.recicladorId || "sin identificar")}</strong> · ${escaparHtml(detalle.fecha)}:
@@ -125,58 +131,59 @@ export function renderizarAdministrador(raiz, contexto) {
           <h3>K2 · Tiempo hasta la confirmación</h3>
           <p class="valor-indicador">${k2.valor === null ? "Sin datos" : `${k2.valor.toFixed(2)} h`}</p>
           <p>Promedio de VALIDADA a CONFIRMADA. Casos incluidos: ${k2.cantidad}.</p>
+          ${lineaMeta(metas.K2)}
         </article>
         <article class="tarjeta indicador">
           <h3>K3 · Resultados de solicitudes</h3>
           <p><strong>Fallidas / confirmadas:</strong> ${porcentaje(k3.fallidaSobreConfirmada.valor)} (${k3.fallidaSobreConfirmada.numerador}/${k3.fallidaSobreConfirmada.denominador})</p>
+          ${lineaMeta(metas.K3a)}
           <p><strong>Canceladas / registradas:</strong> ${porcentaje(k3.canceladaSobreRegistrada.valor)} (${k3.canceladaSobreRegistrada.numerador}/${k3.canceladaSobreRegistrada.denominador})</p>
+          ${lineaMeta(metas.K3b)}
         </article>
         <article class="tarjeta indicador">
           <h3>K6 · Auditoría de asignaciones</h3>
           <p><strong>Asignaciones revisadas:</strong> ${k6.totalAsignaciones}</p>
           <p><strong>Incompatibles:</strong> ${k6.incompatibles} · <strong>Duplicadas:</strong> ${k6.duplicadas} · <strong>Sin trazabilidad:</strong> ${k6.sinTrazabilidad}</p>
+          ${lineaMeta(metas.K6)}
           <details><summary>Ver revisión por solicitud</summary><ul class="lista-auditoria">${auditoria}</ul></details>
         </article>
         <article class="tarjeta indicador">
           <h3>K7 · Equilibrio de asignaciones</h3>
-          <p><strong>Coeficiente de variación (CV):</strong> ${porcentaje(k7.coeficienteVariacion)}</p>
-          <p>Media: ${k7.media.toFixed(2)} · desviación estándar: ${k7.desviacion.toFixed(2)} solicitudes por reciclador.</p>
-          <ul>${conteos}</ul>
+          <p><strong>CV de la microzona menos equitativa:</strong> ${porcentaje(k7.coeficienteVariacion)}${k7.microzonaCritica ? ` (${escaparHtml(k7.microzonaCritica)})` : ""}</p>
+          <p class="texto-ayuda">Se compara solo entre recicladores de la misma microzona, porque compiten por la misma demanda.</p>
+          <ul>${grupos}</ul>
+          ${lineaMeta(metas.K7)}
         </article>
       </div>`;
   }
 
-  function dibujarEliminacionDemo(estado) {
-    const existe = estado.solicitudes.some((solicitud) => solicitud.id === SOLICITUD_DEMO_PARA_ELIMINAR);
+  function dibujarDatosDemo(estado) {
     return `
-      <section class="tarjeta bloque-eliminacion" aria-labelledby="eliminar-demo-titulo">
-        <h2 id="eliminar-demo-titulo">Solicitud de prueba</h2>
-        <p><strong>${SOLICITUD_DEMO_PARA_ELIMINAR}</strong></p>
-        ${existe
-          ? `<p>Al eliminarla se quitarán también sus eventos y mensajes simulados asociados en este navegador.</p><button class="boton peligro" type="button" data-eliminar-solicitud-demo>Eliminar esta solicitud demo</button>`
-          : `<p>Esta solicitud no aparece en los datos guardados de este navegador.</p>`}
+      <section class="tarjeta" aria-labelledby="datos-demo-titulo">
+        <h2 id="datos-demo-titulo">Datos de demostración</h2>
+        <p>Este navegador guarda ${estado.solicitudes.length} solicitudes y ${estado.eventos.length} eventos.</p>
+        <p class="texto-ayuda">El escenario de prueba crea una solicitud por caso (CP-01 a CP-04, CAS-01, CAS-02a, CAS-02b) más solicitudes confirmadas, atendidas, fallidas y canceladas, usando el mismo motor. Ambas acciones reemplazan los datos guardados en este navegador.</p>
+        <div class="acciones">
+          <button class="boton primario" type="button" data-cargar-escenario>Cargar escenario de prueba</button>
+          <button class="boton peligro" type="button" data-restablecer-demo>Restablecer datos base</button>
+        </div>
       </section>`;
   }
 
-  function eliminarSolicitudDemo() {
-    const estado = contexto.obtenerEstado();
-    const solicitud = estado.solicitudes.find((item) => item.id === SOLICITUD_DEMO_PARA_ELIMINAR);
-    if (!solicitud) return mostrarAviso(raiz, "La solicitud no está en el almacenamiento de este navegador.", "info");
-    const confirmar = window.confirm(
-      `¿Eliminar ${SOLICITUD_DEMO_PARA_ELIMINAR}? Se quitarán la solicitud, sus eventos y sus mensajes simulados asociados de este navegador. Esta acción no se puede deshacer desde Ciudad Verde.`
-    );
-    if (!confirmar) return;
+  function cargarEscenario() {
+    const actual = contexto.obtenerEstado();
+    if (!window.confirm("¿Reemplazar los datos guardados en este navegador por el escenario de prueba?")) return;
+    const { estado } = crearEscenarioPrueba({ parametros: actual.parametros });
+    descartarKpiCalculados();
+    contexto.actualizarEstado(() => ({ ...estado, parametros: actual.parametros }));
+    mostrarAviso(raiz, `Escenario de prueba cargado: ${estado.solicitudes.length} solicitudes. Revísalo en las vistas de Reciclador y Facilitador.`, "exito");
+  }
 
-    contexto.actualizarEstado((actual) => ({
-      ...actual,
-      solicitudes: actual.solicitudes.filter((item) => item.id !== SOLICITUD_DEMO_PARA_ELIMINAR),
-      eventos: actual.eventos.filter((evento) => evento.solicitudId !== SOLICITUD_DEMO_PARA_ELIMINAR),
-      mensajes: actual.mensajes.filter((mensaje) =>
-        !String(mensaje.texto).includes(SOLICITUD_DEMO_PARA_ELIMINAR) &&
-        !String(mensaje.destinatario).includes(SOLICITUD_DEMO_PARA_ELIMINAR)
-      ),
-    }));
-    mostrarAviso(raiz, "La solicitud demo y sus registros asociados fueron eliminados de este navegador.", "exito");
+  function restablecerDemo() {
+    if (!window.confirm("¿Borrar las solicitudes, eventos y mensajes de este navegador y volver a los datos base?")) return;
+    descartarKpiCalculados();
+    contexto.actualizarEstado(() => crearDatosIniciales());
+    mostrarAviso(raiz, "Se restablecieron los datos base de la demostración.", "exito");
   }
 
   function leerFormulario(formulario) {

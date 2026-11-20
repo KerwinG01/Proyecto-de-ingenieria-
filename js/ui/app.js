@@ -2,6 +2,7 @@ import { renderizarCiudadano } from "./ciudadano.js";
 import { renderizarReciclador } from "./reciclador.js";
 import { renderizarFacilitador } from "./facilitador.js";
 import { renderizarAdministrador } from "./administrador.js";
+import { renderizarAutenticacion } from "./autenticacion.js";
 import { guardarEstado, leerEstado } from "./servicios.js";
 import { escaparHtml, fechaLegible } from "./comun.js";
 
@@ -11,6 +12,7 @@ const avisoAplicacion = document.querySelector("#aviso-aplicacion");
 const bandejaMensajes = document.querySelector("#mensajes-simulados");
 const estadoInicial = leerEstado();
 let estado = estadoInicial.estado;
+let panelCuenta = null;
 
 const vistas = {
   ciudadano: renderizarCiudadano,
@@ -38,6 +40,16 @@ function dibujarBandeja() {
 }
 
 function dibujarVista() {
+  if (panelCuenta) {
+    renderizarAutenticacion(elementoVista, {
+      cerrar: () => {
+        panelCuenta = null;
+        dibujarVista();
+      },
+    }, panelCuenta);
+    return;
+  }
+
   const renderizar = vistas[selectorRol.value] || renderizarCiudadano;
   const contexto = {
     obtenerEstado: () => estado,
@@ -57,6 +69,13 @@ function dibujarVista() {
 selectorRol.addEventListener("change", () => {
   anunciar("Rol simulado cambiado. No se requiere autenticación.", "info");
   dibujarVista();
+});
+
+document.querySelectorAll("[data-vista-cuenta]").forEach((boton) => {
+  boton.addEventListener("click", () => {
+    panelCuenta = boton.dataset.vistaCuenta;
+    dibujarVista();
+  });
 });
 
 dibujarBandeja();

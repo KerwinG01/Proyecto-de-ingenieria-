@@ -90,6 +90,8 @@ legend { padding: 0 6px; }
 .aviso--error { border-color: var(--rojo); color: #701919; background: var(--fondo-rojo); }
 .aviso--exito { border-color: #17683f; color: #0a4b2d; background: #e5f5e9; }
 .aviso--info { border-color: #465e76; color: #203d58; background: #edf4fa; }
+.aviso-carga { border: 2px solid var(--rojo); color: #701919; background: var(--fondo-rojo); }
+.aviso-carga h1 { margin-top: 0; font-size: 1.5rem; }
 .etiqueta-estado { display: inline-block; padding: 4px 9px; border: 1px solid #63816e; border-radius: 999px; color: #163d2b; background: #eff8f1; font-size: 1rem; font-weight: 700; }
 .fila-entre { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
 .resumen-datos { display: grid; grid-template-columns: minmax(120px, 0.6fr) 2fr; gap: 8px 14px; }

@@ -3,40 +3,57 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Pruebas automáticas | Ciudad Verde</title>
+  <title>Validación del prototipo | Ciudad Verde</title>
+  <link rel="stylesheet" href="../css/modo-prueba.css">
   <style>
     :root { color-scheme: light; font-family: Arial, sans-serif; font-size: 16px; }
-    body { max-width: 960px; margin: 0 auto; padding: 24px; color: #17342b; background: #f7fbf8; }
+    body { max-width: 1040px; margin: 0 auto; padding: 24px; color: #17342b; background: #f7fbf8; }
     h1 { margin-top: 0; font-size: 1.8rem; }
     p { line-height: 1.5; }
     button { min-height: 44px; padding: 10px 16px; border: 2px solid #075c38; border-radius: 6px; color: #fff; background: #087443; font: inherit; font-weight: 700; cursor: pointer; }
     button:focus-visible { outline: 3px solid #9b5b00; outline-offset: 3px; }
     #resumen { margin: 20px 0 12px; font-weight: 700; }
-    ol { padding-left: 28px; }
-    li { margin: 8px 0; padding: 10px; border-left: 5px solid #555; background: #fff; }
-    li.correcta { border-color: #087443; }
-    li.incorrecta { border-color: #a32020; }
+    #resultados { padding-left: 28px; }
+    #resultados li { margin: 8px 0; padding: 10px; border-left: 5px solid #555; background: #fff; }
+    #resultados li.correcta { border-color: #087443; }
+    #resultados li.incorrecta { border-color: #a32020; }
+    .indice-validacion { padding: 16px 20px; border: 1px solid #c9ddd1; border-radius: 12px; background: #fff; }
+    .indice-validacion ol { margin: 8px 0 0; padding-left: 22px; }
+    .seccion-validacion { margin-top: 32px; padding-top: 16px; border-top: 2px solid #c9ddd1; }
     .detalle { display: block; margin-top: 4px; white-space: pre-wrap; color: #343434; }
     code { overflow-wrap: anywhere; }
     .acciones { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
     .enlace-boton { display: inline-flex; align-items: center; min-height: 44px; padding: 10px 16px; border: 2px solid #075c38; border-radius: 6px; color: #075c38; background: #fff; font-weight: 700; text-decoration: none; }
     .enlace-boton:focus-visible { outline: 3px solid #9b5b00; outline-offset: 3px; }
-    #escenario { margin-top: 32px; padding-top: 16px; border-top: 2px solid #c9ddd1; }
-    table { width: 100%; border-collapse: collapse; background: #fff; }
-    th, td { padding: 8px; border: 1px solid #c9ddd1; text-align: left; vertical-align: top; }
-    th { background: #e7f4ec; }
+    #tabla-escenario table { width: 100%; border-collapse: collapse; background: #fff; }
+    #tabla-escenario th, #tabla-escenario td { padding: 8px; border: 1px solid #c9ddd1; text-align: left; vertical-align: top; }
+    #tabla-escenario th { background: #e7f4ec; }
   </style>
 </head>
 <body>
   <main>
-    <h1>Pruebas automáticas del motor</h1>
-    <p>Estas pruebas comprueban validación, compatibilidad, asignación, cascada, cupos y reparto. Cada caso contiene su resultado esperado en el código.</p>
+    <h1>Validación del prototipo Ciudad Verde</h1>
+    <p>Prototipo de bajo nivel de la alternativa A2 (Proyecto de Ingeniería I, grupo 146): coordinación de la recolección de material reciclable entre hogares y recicladores de oficio en la microzona piloto de San Eduardo, Cúcuta.</p>
+    <nav class="indice-validacion" aria-label="Secciones de la validación">
+      <strong>Secciones</strong>
+      <ol>
+        <li><a href="#pruebas">Pruebas automáticas del motor (funcionamiento)</a></li>
+        <li><a href="#escenario">Verificación en la vista demo</a></li>
+        <li><a href="#experimentos">Validación experimental: KPI, SIM-01, SIM-02, ESC-01 y REN-01</a></li>
+      </ol>
+      <div class="acciones" style="margin-top: 12px">
+        <a class="enlace-boton" href="../index.html" target="_blank" rel="noopener">Abrir la demo</a>
+      </div>
+    </nav>
+
+    <h2 id="pruebas" class="seccion-validacion">1. Pruebas automáticas del motor</h2>
+    <p>Estas pruebas comprueban validación, compatibilidad, asignación, cascada, cupos, reparto, estados, parámetros, indicadores y experimentos. Cada caso contiene su resultado esperado en el código.</p>
     <button id="ejecutar" type="button">Ejecutar pruebas</button>
     <p id="resumen" role="status" aria-live="polite">Las pruebas todavía no se han ejecutado.</p>
     <ol id="resultados"></ol>
 
-    <section id="escenario" aria-labelledby="escenario-titulo">
-      <h2 id="escenario-titulo">Verificación en la vista demo</h2>
+    <section id="escenario" class="seccion-validacion" aria-labelledby="escenario-titulo">
+      <h2 id="escenario-titulo">2. Verificación en la vista demo</h2>
       <p>Carga en la demo un escenario construido con el mismo motor: una solicitud por caso (CP-01, CP-02, CP-02b, CP-03b, CP-04, CAS-01, CAS-02a, CAS-02b) más solicitudes confirmadas, atendidas, fallidas y canceladas para los indicadores. <strong>Reemplaza los datos guardados de la demo en este navegador.</strong></p>
       <div class="acciones">
         <button id="cargar-escenario" type="button">Cargar escenario en la demo</button>
@@ -44,6 +61,12 @@
       </div>
       <p id="estado-escenario" role="status" aria-live="polite"></p>
       <div id="tabla-escenario"></div>
+    </section>
+
+    <section id="experimentos" class="seccion-validacion" aria-labelledby="experimentos-titulo">
+      <h2 id="experimentos-titulo">3. Validación experimental</h2>
+      <p>Los KPI se calculan con los datos de la demo guardados en este navegador (carga antes el escenario si quieres partir de datos conocidos). Las simulaciones generan sus propios datos con el motor y una semilla fija, de modo que cualquier persona obtiene los mismos resultados.</p>
+      <div id="contenedor-experimentos"></div>
     </section>
   </main>
 
@@ -62,7 +85,10 @@
     import { transicionarEstado } from "../js/estados.js";
     import { actualizarCupoReciclador, validarParametros } from "../js/parametros.js";
     import { crearHogar, crearReciclador, crearSolicitud } from "../js/modelo.js";
-    import { calcularK2, calcularK3, calcularK6, calcularK7 } from "../js/indicadores.js";
+    import { calcularK2, calcularK3, calcularK6, calcularK7, evaluarMetas, calcularIndicadores } from "../js/indicadores.js";
+    import { auditarLote, convertirACSV, probabilidadTeorica, simularCascada } from "../js/experimentos.js";
+    import { ajustePotencia, fechaSabadoDesde } from "../js/utilidades.js";
+    import { crearMulberry32 } from "../js/prng.js";
 
     const parametros = {
       ...PARAMETROS_BASE,
@@ -525,6 +551,102 @@
         comprobar(resultado.coeficienteVariacion === 1, "Se esperaba CV poblacional igual a 1.");
       });
 
+      probar("IND-K3b: con el flujo real (primera transición REGISTRADA → VALIDADA) cuenta las registradas", () => {
+        const resultado = calcularK3([
+          { solicitudId: "K3R-1", estadoAnterior: "REGISTRADA", estadoNuevo: "VALIDADA", fecha: "2026-11-19T08:00:00Z" },
+          { solicitudId: "K3R-1", estadoAnterior: "VALIDADA", estadoNuevo: "CANCELADA", fecha: "2026-11-19T08:05:00Z" },
+          { solicitudId: "K3R-2", estadoAnterior: "REGISTRADA", estadoNuevo: "VALIDADA", fecha: "2026-11-19T08:00:00Z" },
+          { solicitudId: "K3R-3", estadoAnterior: "REGISTRADA", estadoNuevo: "VALIDADA", fecha: "2026-11-19T08:00:00Z" },
+          { solicitudId: "K3R-4", estadoAnterior: "REGISTRADA", estadoNuevo: "VALIDADA", fecha: "2026-11-19T08:00:00Z" },
+        ]);
+        comprobar(resultado.canceladaSobreRegistrada.denominador === 4, "Se esperaban 4 solicitudes registradas.");
+        comprobar(resultado.canceladaSobreRegistrada.valor === 0.25, "Se esperaba 1/4 canceladas.");
+      });
+
+      probar("IND-K7b: K7 compara solo recicladores de la misma microzona", () => {
+        const eventos = ["R1", "R2", "R3"].flatMap((id, i) => [
+          { solicitudId: `K7M-${i}a`, estadoNuevo: "ASIGNADA", recicladorId: id, fecha: "2026-11-19T08:00:00Z" },
+          { solicitudId: `K7M-${i}b`, estadoNuevo: "ASIGNADA", recicladorId: id, fecha: "2026-11-19T08:01:00Z" },
+        ]);
+        const resultado = calcularK7({ eventos, recicladores: recicladoresSanEduardo() });
+        comprobar(resultado.coeficienteVariacion === 0, `Se esperaba CV 0 en San Eduardo (2/2/2) y no ${resultado.coeficienteVariacion}.`);
+        comprobar(resultado.coeficienteVariacionGlobal > 0.3, "El CV global (con R4 en cero) debía ser mayor que 0,30.");
+        comprobar(resultado.porMicrozona.find((g) => g.microzona === "Ciudad Jardín").comparable === false, "Ciudad Jardín tiene un solo reciclador.");
+      });
+
+      probar("MET-01: las metas de la Tabla 16 se evalúan con cumple / no cumple", () => {
+        const filas = evaluarMetas({
+          K2: { valor: 1.5, cantidad: 3 },
+          K3: { fallidaSobreConfirmada: { valor: 0.2, numerador: 1, denominador: 5 }, canceladaSobreRegistrada: { valor: null, numerador: 0, denominador: 0 } },
+          K6: { incompatibles: 0, duplicadas: 0, totalAsignaciones: 10 },
+          K7: { coeficienteVariacion: 0.30, microzonaCritica: "San Eduardo" },
+        });
+        const porId = Object.fromEntries(filas.map((f) => [f.id, f.cumple]));
+        comprobar(porId.K2 === true && porId.K3a === false && porId.K3b === null && porId.K6 === true && porId.K7 === true,
+          `Resultado inesperado: ${JSON.stringify(porId)}`);
+      });
+
+      probar("IDX-01: el índice de ocupación produce las mismas asignaciones que el filtrado completo", () => {
+        const azar = crearMulberry32(7);
+        const zonas = ["San Eduardo", "Ciudad Jardín"];
+        const mats = ["papel", "plástico", "vidrio", "metal"];
+        const fechas = ["2026-11-21", "2026-11-28"];
+        for (let caso = 0; caso < 40; caso += 1) {
+          const R = 1 + Math.floor(azar() * 6);
+          const recs = Array.from({ length: R }, (_, i) => reciclador(`R${i}`, { microzona: zonas[Math.floor(azar() * 2)], materiales: mats.filter(() => azar() < 0.8), cupo: 1 + Math.floor(azar() * 8) }));
+          const hogares = zonas.map((z, i) => hogar(`H${i}`, z));
+          const existentes = Array.from({ length: Math.floor(azar() * 10) }, (_, i) => ({
+            ...solicitud(`E${i}`, { hogarId: "H0", bolsas: 1 + Math.floor(azar() * 4), fechaServicio: fechas[Math.floor(azar() * 2)], estado: ["ASIGNADA", "CONFIRMADA", "ATENDIDA", "FALLIDA", "CANCELADA"][Math.floor(azar() * 5)] }),
+            recicladorId: `R${Math.floor(azar() * R)}`,
+          }));
+          const lote = Array.from({ length: 5 + Math.floor(azar() * 40) }, (_, i) => solicitud(`S${i}`, { hogarId: `H${Math.floor(azar() * 2)}`, materiales: [mats[Math.floor(azar() * 4)]], bolsas: 1 + Math.floor(azar() * 4), fechaServicio: fechas[Math.floor(azar() * 2)] }));
+          const firma = (r) => JSON.stringify(r.solicitudesFinales.map((s) => [s.id, s.estado, s.recicladorId]));
+          const conIndice = asignarLote({ solicitudes: lote, hogares, recicladores: recs, solicitudesExistentes: existentes, parametros, usarIndice: true });
+          const sinIndice = asignarLote({ solicitudes: lote, hogares, recicladores: recs, solicitudesExistentes: existentes, parametros, usarIndice: false });
+          comprobar(firma(conIndice) === firma(sinIndice), `Diferencia en el caso aleatorio ${caso + 1}.`);
+        }
+      });
+
+      probar("SIM-01a: la simulación es reproducible con la misma semilla", () => {
+        const a = simularCascada({ p: 0.7, k: 3, N: 300, semilla: 42, parametros });
+        const b = simularCascada({ p: 0.7, k: 3, N: 300, semilla: 42, parametros });
+        comprobar(JSON.stringify(a.filas) === JSON.stringify(b.filas), "Dos corridas con la misma semilla deben coincidir.");
+      });
+
+      probar("SIM-01b: con la semilla de referencia, la confirmación queda dentro de ±2 EE del modelo (ec. 11)", () => {
+        const r = simularCascada({ p: 0.7, k: 3, N: 1000, semilla: 20261121, parametros });
+        comprobar(Math.abs(probabilidadTeorica(0.7, 3) - 0.973) < 1e-12, "La ecuación 11 debe dar 0,973 con p = 0,7 y k = 3.");
+        comprobar(r.filas.length === 3 && r.filas.every((f) => f.dentroDeDosEE), r.filas.map((f) => `i=${f.intento}: ${f.observada} vs ${f.teorica.toFixed(3)}`).join("; "));
+      });
+
+      probar("SIM-01c: con menos recicladores que k, la cascada se agota antes de k intentos", () => {
+        const r = simularCascada({ p: 0.5, k: 3, N: 200, semilla: 5, recicladoresCompatibles: 2, parametros });
+        comprobar(r.parametros.intentosEfectivos === 2 && r.filas.length === 2, "Con 2 recicladores solo puede haber 2 intentos.");
+        comprobar(r.registros.every((x) => x.intentos <= 2), "Ninguna solicitud debe usar más de 2 intentos.");
+      });
+
+      probar("ESC-01a: un lote de 200 solicitudes con 8 recicladores no rompe cupos ni volumen con ambos métodos", () => {
+        const recs = Array.from({ length: 8 }, (_, i) => reciclador(`RX${i + 1}`));
+        const lote = Array.from({ length: 200 }, (_, i) => solicitud(`SX-${i + 1}`));
+        for (const usarIndice of [true, false]) {
+          const r = asignarLote({ solicitudes: lote, hogares: [hogar()], recicladores: recs, parametros, usarIndice });
+          const auditoria = auditarLote(r, recs, parametros);
+          comprobar(r.asignadas.length === 200 && auditoria.integridad === 0, `usarIndice=${usarIndice}: ${JSON.stringify(auditoria)}`);
+        }
+      });
+
+      probar("CSV-01: el CSV usa punto y coma, coma decimal y escapa el texto", () => {
+        const texto = convertirACSV([{ clave: "a", titulo: "Valor" }, { clave: "b", titulo: "Nota; extra" }], [{ a: 0.973, b: 'dice "hola"' }, { a: true, b: null }]);
+        comprobar(texto === 'Valor;"Nota; extra"\r\n0,973;"dice ""hola"""\r\nsí;', `CSV inesperado: ${texto}`);
+      });
+
+      probar("UTL-01: utilidades de fecha y ajuste potencial", () => {
+        comprobar(fechaSabadoDesde(new Date(2026, 10, 19, 10)) === "2026-11-21", "El sábado siguiente al jueves 19/11/2026 es el 21/11/2026.");
+        comprobar(fechaSabadoDesde(new Date(2026, 10, 21, 23)) === "2026-11-21", "Un sábado devuelve el mismo día.");
+        const ajuste = ajustePotencia([10, 20, 40, 80].map((x) => ({ x, y: 3 * x ** 2 })));
+        comprobar(Math.abs(ajuste.b - 2) < 1e-9 && Math.abs(ajuste.a - 3) < 1e-9, "El ajuste de y = 3x² debe dar b = 2 y a = 3.");
+      });
+
       const lista = document.querySelector("#resultados");
       lista.replaceChildren();
       for (const prueba of pruebas) {
@@ -572,6 +694,16 @@
         estadoEscenario.textContent = `Error al crear el escenario: ${error.message}`;
         console.error(error);
       }
+    });
+  </script>
+  <script type="module">
+    import { renderizarModoPrueba } from "../js/ui/modo-prueba.js";
+    import { leerEstado } from "../js/ui/servicios.js";
+
+    renderizarModoPrueba(document.querySelector("#contenedor-experimentos"), {
+      obtenerEstado: () => leerEstado().estado,
+      origen: "Datos de la demo guardados en este navegador",
+      medirCarga: false,
     });
   </script>
 </body>

@@ -36,6 +36,9 @@ a { color: var(--verde-oscuro); }
 .marca-simbolo { display: grid; width: 48px; height: 48px; place-items: center; border: 2px solid #b6e3c7; border-radius: 50%; color: #fff; font-size: 28px; }
 .marca strong { display: block; font-size: 1.25rem; line-height: 1.2; }
 .marca small { display: block; color: #d8efe0; font-size: 1rem; }
+.navegacion-cuenta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.navegacion-cuenta button { min-height: 44px; padding: 8px 11px; border: 1px solid #b6e3c7; border-radius: 6px; color: #fff; background: transparent; font-weight: 700; cursor: pointer; }
+.navegacion-cuenta button:hover, .navegacion-cuenta button:focus-visible { color: #073f2d; background: #e7f4ec; }
 .controles-superiores { display: grid; grid-template-columns: auto minmax(150px, 220px); align-items: center; gap: 2px 12px; }
 .controles-superiores label { font-weight: 700; }
 .controles-superiores select { width: 100%; padding: 8px 12px; border: 1px solid #fff; border-radius: 6px; color: #163d2c; background: #fff; }
@@ -99,6 +102,10 @@ legend { padding: 0 6px; }
 .rejilla-campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 6px 14px; }
 .campo-cupo { min-width: 0; }
 .bloque-proximamente { background: #f2f8f4; }
+.nota-demo { line-height: 1.55; }
+.vista-cuenta { max-width: 840px; margin: 0 auto; }
+.bloque-eliminacion { border-color: #a54a43; }
+.bloque-eliminacion h2 { color: #701919; }
 
 .bandeja { margin-top: 28px; padding: 18px 20px; border: 1px solid var(--borde); border-radius: 12px; background: #fff; }
 .lista-mensajes { display: grid; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
@@ -109,6 +116,7 @@ legend { padding: 0 6px; }
 
 @media (max-width: 680px) {
   .barra-superior { align-items: flex-start; flex-direction: column; padding: 14px 16px; }
+  .navegacion-cuenta { width: 100%; }
   .controles-superiores { width: 100%; grid-template-columns: 1fr; }
   .solo-lector { grid-column: 1; }
   .contenedor-principal { width: min(100% - 20px, 1040px); margin: 16px auto; }

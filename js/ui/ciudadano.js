@@ -2,14 +2,14 @@ import { crearSolicitud } from "../modelo.js";
 import { asignarSolicitud, validarSolicitud } from "../motor.js";
 import { transicionarEstado } from "../estados.js";
 import { crearId, crearMensaje, fechaActualIso } from "./servicios.js";
-import { escaparHtml, fechaLegible, textoEstado, mostrarAviso } from "./comun.js";
+import { escaparHtml, fechaLegible, fechaSabadoProximo, textoEstado, mostrarAviso } from "./comun.js";
 
 const FRANJA_PILOTO = { dia: "sábado", inicio: "08:00", fin: "12:00" };
 
 export function renderizarCiudadano(raiz, contexto) {
   let pestaña = "nueva";
   let paso = 1;
-  const formulario = { hogarId: "", materiales: [], bolsas: 1 };
+  const formulario = { hogarId: "", materiales: [], bolsas: 1, fechaServicio: fechaSabadoProximo() };
   const hoy = () => fechaActualIso();
 
   function dibujar() {
@@ -92,6 +92,9 @@ export function renderizarCiudadano(raiz, contexto) {
             <dt>Bolsas</dt><dd>${escaparHtml(formulario.bolsas)}</dd>
             <dt>Franja</dt><dd>Sábado, 8:00 a. m. a 12:00 p. m.</dd>
           </dl>
+          <label for="fecha-servicio-ciudadano">Fecha de recolección</label>
+          <input id="fecha-servicio-ciudadano" type="date" value="${escaparHtml(formulario.fechaServicio)}" min="${escaparHtml(fechaSabadoProximo())}" required>
+          <p class="texto-ayuda">Selecciona un sábado. El cupo se calcula por fecha de servicio.</p>
           <p class="texto-ayuda">El sistema enviará una oferta al reciclador compatible mejor puntuado.</p>
           <div class="acciones">
             <button class="boton secundario" type="button" data-anterior>Volver</button>
@@ -101,6 +104,9 @@ export function renderizarCiudadano(raiz, contexto) {
     }
 
     contenido.innerHTML = cuerpo;
+    contenido.querySelector("#fecha-servicio-ciudadano")?.addEventListener("change", (evento) => {
+      formulario.fechaServicio = evento.target.value;
+    });
     const selectorHogar = contenido.querySelector("#hogar-ciudadano");
     selectorHogar?.addEventListener("change", () => { formulario.hogarId = selectorHogar.value; });
     contenido.querySelector("[data-siguiente]")?.addEventListener("click", () => {
@@ -134,6 +140,7 @@ export function renderizarCiudadano(raiz, contexto) {
       materiales: formulario.materiales,
       bolsas: Number(formulario.bolsas),
       franja: { ...FRANJA_PILOTO },
+      fechaServicio: formulario.fechaServicio,
       estado: "REGISTRADA",
       registradaPor: "ciudadano",
       recicladorId: null,
@@ -182,6 +189,7 @@ export function renderizarCiudadano(raiz, contexto) {
     }));
     formulario.materiales = [];
     formulario.bolsas = 1;
+    formulario.fechaServicio = fechaSabadoProximo();
     pestaña = "mis";
     paso = 1;
     dibujar();
@@ -201,10 +209,11 @@ export function renderizarCiudadano(raiz, contexto) {
         <div class="fila-entre"><h3>${escaparHtml(item.id)}</h3><span class="etiqueta-estado">${escaparHtml(textoEstado(item.estado))}</span></div>
         <p>${escaparHtml(item.materiales.join(", "))} · ${escaparHtml(item.bolsas)} bolsa(s)</p>
         <p>Franja: sábado, 8:00 a. m. a 12:00 p. m.</p>
+        <p>Fecha de recolección: ${escaparHtml(item.fechaServicio ? fechaLegible(`${item.fechaServicio}T12:00:00`) : "Fecha no registrada")}</p>
         ${item.recicladorId ? `<p>Reciclador: ${escaparHtml(estado.recicladores.find((r) => r.id === item.recicladorId)?.nombre || item.recicladorId)}</p>` : ""}
         ${item.intentos?.length ? `<details><summary>Ver intentos (${item.intentos.length})</summary><ul>${item.intentos.map((intento) => `<li>${escaparHtml(intento.recicladorId)}: ${escaparHtml(intento.resultado)}${intento.motivo ? ` · Motivo: ${escaparHtml(intento.motivo)}` : ""}</li>`).join("")}</ul></details>` : ""}
         <p class="texto-ayuda">Actualizada: ${escaparHtml(fechaLegible(estado.eventos.filter((e) => e.solicitudId === item.id).at(-1)?.fecha))}</p>
-        ${["REGISTRADA", "VALIDADA", "ASIGNADA", "CONFIRMADA"].includes(item.estado) ? `<button class="boton peligro" type="button" data-cancelar="${escaparHtml(item.id)}">Cancelar solicitud</button>` : ""}
+        ${["REGISTRADA", "VALIDADA", "ASIGNADA", "CONFIRMADA", "EN_ESPERA", "SIN_DISPONIBILIDAD"].includes(item.estado) ? `<button class="boton peligro" type="button" data-cancelar="${escaparHtml(item.id)}">Cancelar solicitud</button>` : ""}
       </article>`).join("") : `<div class="tarjeta"><p>Este hogar todavía no tiene solicitudes.</p></div>`;
 
     contenido.innerHTML = `

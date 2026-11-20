@@ -1,0 +1,52 @@
+/* Modo de prueba y gráficos: estilos autónomos, usados por index.html y test/tests.html. */
+.mp { display: grid; gap: 18px; color: #173a2d; }
+.mp-encabezado { padding: 20px; border: 1px solid #b8d2c2; border-radius: 12px; background: linear-gradient(110deg, #eaf6ed, #fff 72%); }
+.mp-encabezado h2 { margin: 0 0 6px; color: #073f2d; }
+.mp-encabezado p { margin: 4px 0; }
+.mp-bloque { min-width: 0; padding: 20px; border: 1px solid #b8d2c2; border-radius: 12px; background: #fff; box-shadow: 0 2px 8px rgb(12 69 43 / 5%); }
+.mp-bloque h3 { margin: 0 0 8px; color: #073f2d; font-size: 1.15rem; }
+.mp-bloque > p { margin: 0 0 12px; }
+.mp-formulario { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; align-items: end; margin-bottom: 12px; }
+.mp-formulario label { display: grid; gap: 4px; font-weight: 600; }
+.mp-formulario input[type="number"], .mp-formulario input:not([type]) { min-height: 44px; padding: 8px 10px; border: 1px solid #7f9c8b; border-radius: 6px; font: inherit; }
+.mp-formulario fieldset { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0; padding: 6px 10px; border: 1px solid #b8d2c2; border-radius: 6px; }
+.mp-formulario legend { padding: 0 4px; font-weight: 600; }
+.mp-opcion { display: inline-flex !important; grid-auto-flow: column; align-items: center; gap: 6px !important; font-weight: 400 !important; min-height: 32px; }
+.mp-boton { min-height: 44px; padding: 10px 16px; border: 2px solid #0b7445; border-radius: 7px; color: #fff; background: #0b7445; font: inherit; font-weight: 700; cursor: pointer; }
+.mp-boton.mp-secundario { color: #075239; background: #fff; }
+.mp-boton:disabled { cursor: progress; opacity: 0.6; }
+.mp-boton:focus-visible, .mp-formulario input:focus-visible, .graf-punto:focus-visible { outline: 3px solid #955600; outline-offset: 2px; }
+.mp-acciones { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0 0; }
+.mp-estado { min-height: 1.5em; font-weight: 600; }
+.mp-nota { margin: 10px 0; color: #44574d; }
+.mp-lista { margin: 10px 0; padding-left: 20px; }
+.mp progress { width: 100%; height: 12px; margin: 6px 0 12px; accent-color: #0b7445; }
+.mp-tabla, .tabla-desplazable { overflow-x: auto; margin: 10px 0; }
+.mp-tabla table, .graf-tabla table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.mp-tabla th, .mp-tabla td, .graf-tabla th, .graf-tabla td { padding: 7px 9px; border: 1px solid #d6e5db; text-align: left; vertical-align: top; }
+.mp-tabla th, .graf-tabla th { background: #e7f4ec; }
+
+.grafico { margin: 16px 0; padding: 0; }
+.graf-titulo { margin: 0 0 4px; font-weight: 700; color: #0b0b0b; }
+.graf-descripcion { margin: 2px 0 8px; color: #52514e; font-size: 0.95rem; }
+.graf-lienzo { overflow-x: auto; }
+.graf-lienzo svg { display: block; width: 100%; min-width: 520px; height: auto; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+.graf-tick { fill: #52514e; font-size: 12px; font-variant-numeric: tabular-nums; }
+.graf-eje { fill: #52514e; font-size: 13px; }
+.graf-etiqueta { fill: #0b0b0b; font-size: 12.5px; }
+.graf-etiqueta-fuerte { fill: #0b0b0b; font-size: 13px; font-weight: 600; }
+.graf-icono { fill: #fff; font-size: 12px; font-weight: 700; }
+.graf-punto { cursor: default; }
+.graf-punto:hover circle:last-of-type { filter: brightness(1.12); }
+.graf-leyenda { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 4px 0 6px; padding: 0; list-style: none; color: #0b0b0b; font-size: 0.95rem; }
+.graf-leyenda li { display: inline-flex; align-items: center; gap: 6px; }
+.graf-tabla summary { cursor: pointer; color: #075239; font-weight: 600; }
+.graf-tooltip { position: absolute; z-index: 50; display: grid; gap: 2px; max-width: 320px; padding: 8px 10px; border: 1px solid rgba(11, 11, 11, 0.1); border-radius: 8px; color: #0b0b0b; background: #fff; box-shadow: 0 6px 18px rgb(0 0 0 / 14%); font-size: 0.9rem; pointer-events: none; }
+.graf-tooltip strong { font-weight: 700; }
+.graf-tooltip-serie { display: inline-flex; align-items: center; gap: 6px; color: #52514e; }
+.graf-tooltip-serie i { display: inline-block; width: 14px; height: 2px; }
+.graf-tooltip[hidden] { display: none; }
+
+@media (max-width: 700px) {
+  .mp-bloque, .mp-encabezado { padding: 14px; }
+}

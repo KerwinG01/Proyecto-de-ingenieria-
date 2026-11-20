@@ -157,3 +157,6 @@ legend { padding: 0 6px; }
   .mensaje-simulado { grid-template-columns: 1fr; }
   .pie-pagina { padding: 16px; }
 }
+
+.meta-indicador { margin: 6px 0; padding: 6px 10px; border-left: 4px solid var(--verde); background: var(--verde-claro); }
+#contenedor-modo-prueba { margin-top: 18px; }

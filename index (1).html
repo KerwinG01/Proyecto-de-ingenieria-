@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#075239">
+  <meta name="description" content="Prototipo académico para coordinar recolección de materiales reciclables en San Eduardo, Cúcuta.">
+  <title>Ciudad Verde | Recolección comunitaria</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <header class="barra-superior">
+    <a class="marca" href="./index.html" aria-label="Ciudad Verde, inicio">
+      <span class="marca-simbolo" aria-hidden="true">♻</span>
+      <span><strong>Ciudad Verde</strong><small>Reciclar hoy, un mejor mañana</small></span>
+    </a>
+    <nav class="navegacion-cuenta" aria-label="Cuenta de demostración">
+      <button type="button" data-vista-cuenta="registro">Registro</button>
+      <button type="button" data-vista-cuenta="login">Iniciar sesión</button>
+      <button type="button" data-vista-cuenta="perfil">Perfil</button>
+    </nav>
+    <div class="controles-superiores">
+      <label for="selector-rol">Vista de demostración</label>
+      <select id="selector-rol" aria-describedby="nota-rol">
+        <option value="ciudadano">Ciudadano</option>
+        <option value="reciclador">Reciclador</option>
+        <option value="facilitador">Facilitador</option>
+        <option value="administrador">Administrador</option>
+      </select>
+      <span id="nota-rol" class="solo-lector">El selector simula roles; no autentica usuarios.</span>
+    </div>
+  </header>
+
+  <main class="contenedor-principal">
+    <p id="aviso-aplicacion" class="aviso" role="status" aria-live="polite" hidden></p>
+    <div id="vista"></div>
+    <details class="bandeja">
+      <summary>Bandeja simulada de WhatsApp y SMS</summary>
+      <p class="texto-ayuda">Los mensajes se muestran en esta pantalla; no se envían a teléfonos.</p>
+      <ul id="mensajes-simulados" class="lista-mensajes"></ul>
+    </details>
+  </main>
+
+  <footer class="pie-pagina">
+    <strong>Ciudad Verde</strong>
+    <span>Reciclar es un compromiso de todos · Prototipo académico para San Eduardo, Cúcuta</span>
+  </footer>
+
+  <script type="module" src="./js/ui/app.js"></script>
+</body>
+</html>

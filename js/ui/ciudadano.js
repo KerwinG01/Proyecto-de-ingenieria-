@@ -161,6 +161,7 @@ export function renderizarCiudadano(raiz, contexto) {
       estadoNuevo: plan.estado,
       responsable: "Motor de asignación",
       fecha: hoy(),
+      recicladorId: plan.ok ? plan.candidato.id : null,
     });
     if (!cierre.ok) return mostrarAviso(raiz, cierre.mensaje, "error");
 

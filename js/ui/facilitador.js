@@ -2,7 +2,7 @@ import { crearHogar, crearSolicitud } from "../modelo.js";
 import { asignarSolicitud, rankearCandidatos, validarSolicitud } from "../motor.js";
 import { transicionarEstado } from "../estados.js";
 import { crearId, crearMensaje, fechaActualIso } from "./servicios.js";
-import { escaparHtml, fechaLegible, textoEstado, mostrarAviso } from "./comun.js";
+import { escaparHtml, fechaLegible, fechaSabadoProximo, textoEstado, mostrarAviso } from "./comun.js";
 
 const FRANJA_PILOTO = { dia: "sábado", inicio: "08:00", fin: "12:00" };
 
@@ -106,7 +106,9 @@ export function renderizarFacilitador(raiz, contexto) {
         <fieldset class="grupo-materiales"><legend>Materiales</legend>${materiales}</fieldset>
         <label for="bolsas-asistida">Cantidad de bolsas (1 a 4)</label>
         <input id="bolsas-asistida" name="bolsas" type="number" min="1" max="4" step="1" value="1" required>
-        <p class="texto-ayuda">Franja semanal fija: sábado, 8:00 a. m. a 12:00 p. m.</p>
+        <label for="fecha-servicio-asistida">Fecha de recolección (sábado)</label>
+        <input id="fecha-servicio-asistida" name="fechaServicio" type="date" value="${fechaSabadoProximo()}" min="${fechaSabadoProximo()}" required>
+        <p class="texto-ayuda">Franja fija: 8:00 a. m. a 12:00 p. m. El cupo se calcula por fecha de servicio.</p>
         <button class="boton primario" type="submit" ${estado.hogares.length ? "" : "disabled"}>Registrar y asignar</button>
       </form>`;
     contenido.querySelector("#form-asistida").addEventListener("submit", (evento) => {
@@ -119,6 +121,7 @@ export function renderizarFacilitador(raiz, contexto) {
         hogarId: form.elements.hogarId.value,
         materiales: materialesElegidos,
         bolsas: Number(form.elements.bolsas.value),
+        fechaServicio: form.elements.fechaServicio.value,
       });
     });
   }
@@ -132,6 +135,7 @@ export function renderizarFacilitador(raiz, contexto) {
       materiales: datos.materiales,
       bolsas: datos.bolsas,
       franja: { ...FRANJA_PILOTO },
+      fechaServicio: datos.fechaServicio,
       estado: "REGISTRADA",
       registradaPor: "facilitador",
       recicladorId: null,
@@ -176,10 +180,10 @@ export function renderizarFacilitador(raiz, contexto) {
 
   function dibujarEscaladas(estado) {
     const contenido = raiz.querySelector("#contenido-facilitador");
-    const lista = estado.solicitudes.filter((item) => item.estado === "SIN_DISPONIBILIDAD");
+    const lista = estado.solicitudes.filter((item) => ["SIN_DISPONIBILIDAD", "REPROGRAMADA"].includes(item.estado));
     const tarjetas = lista.length ? lista.map((solicitud) => {
       const hogar = estado.hogares.find((item) => item.id === solicitud.hogarId);
-      const ranking = hogar ? rankearCandidatos({
+      const ranking = solicitud.estado === "SIN_DISPONIBILIDAD" && hogar ? rankearCandidatos({
         solicitud,
         hogar,
         recicladores: estado.recicladores,
@@ -195,14 +199,18 @@ export function renderizarFacilitador(raiz, contexto) {
           <h3>${escaparHtml(solicitud.id)}</h3>
           <p>Hogar: ${escaparHtml(hogar?.alias || solicitud.hogarId)} · ${escaparHtml(hogar?.microzona || "")}</p>
           <p>Materiales: ${escaparHtml(solicitud.materiales.join(", "))} · ${escaparHtml(solicitud.bolsas)} bolsa(s)</p>
+          <p>Fecha de recolección: ${escaparHtml(solicitud.fechaServicio ? fechaLegible(`${solicitud.fechaServicio}T12:00:00`) : "Fecha no registrada")}</p>
           <p>Intentos: ${solicitud.intentos?.length || 0}</p>
           ${solicitud.intentos?.length ? `<details><summary>Ver motivos y resultados</summary><ul>${solicitud.intentos.map((intento) => `<li>${escaparHtml(intento.recicladorId)}: ${escaparHtml(intento.resultado)}${intento.motivo ? ` · ${escaparHtml(intento.motivo)}` : ""}</li>`).join("")}</ul></details>` : ""}
-          <div class="acciones">
-            ${opciones ? `<label for="manual-${escaparHtml(solicitud.id)}">Asignación manual compatible</label><select id="manual-${escaparHtml(solicitud.id)}" data-reciclador>${opciones}</select><button class="boton primario" type="button" data-manual="${escaparHtml(solicitud.id)}">Asignar</button>` : `<p>No hay candidatos compatibles sin intento previo.</p>`}
-          </div>
-          <label for="fecha-reprogramar-${escaparHtml(solicitud.id)}">Nueva fecha de recolección</label>
-          <input id="fecha-reprogramar-${escaparHtml(solicitud.id)}" type="date" data-fecha-reprogramar>
-          <button class="boton secundario" type="button" data-reprogramar="${escaparHtml(solicitud.id)}">Reprogramar</button>
+          ${solicitud.estado === "REPROGRAMADA" ? `
+            <p>La solicitud está lista para volver a validación y asignación.</p>
+            <button class="boton primario" type="button" data-reactivar="${escaparHtml(solicitud.id)}">Intentar asignación en esta fecha</button>` : `
+            <div class="acciones">
+              ${opciones ? `<label for="manual-${escaparHtml(solicitud.id)}">Asignación manual compatible</label><select id="manual-${escaparHtml(solicitud.id)}" data-reciclador>${opciones}</select><button class="boton primario" type="button" data-manual="${escaparHtml(solicitud.id)}">Asignar</button>` : `<p>No hay candidatos compatibles sin intento previo.</p>`}
+            </div>
+            <label for="fecha-reprogramar-${escaparHtml(solicitud.id)}">Nueva fecha de recolección (sábado)</label>
+            <input id="fecha-reprogramar-${escaparHtml(solicitud.id)}" type="date" min="${fechaSabadoProximo()}" data-fecha-reprogramar>
+            <button class="boton secundario" type="button" data-reprogramar="${escaparHtml(solicitud.id)}">Reprogramar</button>`}
         </article>`;
     }).join("") : `<div class="tarjeta"><p>No hay solicitudes escaladas pendientes.</p></div>`;
 
@@ -213,6 +221,7 @@ export function renderizarFacilitador(raiz, contexto) {
       </section>`;
     contenido.querySelectorAll("[data-manual]").forEach((boton) => boton.addEventListener("click", () => asignarManual(boton.dataset.manual)));
     contenido.querySelectorAll("[data-reprogramar]").forEach((boton) => boton.addEventListener("click", () => reprogramar(boton.dataset.reprogramar)));
+    contenido.querySelectorAll("[data-reactivar]").forEach((boton) => boton.addEventListener("click", () => reactivarReprogramada(boton.dataset.reactivar)));
   }
 
   function asignarManual(id) {
@@ -260,6 +269,7 @@ export function renderizarFacilitador(raiz, contexto) {
     const solicitud = estado.solicitudes.find((item) => item.id === id);
     const fechaNueva = raiz.querySelector(`#fecha-reprogramar-${CSS.escape(id)}`)?.value;
     if (!solicitud || !fechaNueva) return mostrarAviso(raiz, "Selecciona una nueva fecha.", "error");
+    if (new Date(`${fechaNueva}T12:00:00`).getDay() !== 6) return mostrarAviso(raiz, "La fecha de recolección debe ser un sábado.", "error");
     const transicion = transicionarEstado({
       solicitud,
       estadoNuevo: "REPROGRAMADA",
@@ -267,7 +277,7 @@ export function renderizarFacilitador(raiz, contexto) {
       fecha: fechaActualIso(),
     });
     if (!transicion.ok) return mostrarAviso(raiz, transicion.mensaje, "error");
-    const actualizada = { ...transicion.solicitudActualizada, fechaReprogramada: fechaNueva };
+    const actualizada = { ...transicion.solicitudActualizada, fechaServicio: fechaNueva, fechaReprogramada: fechaNueva };
     contexto.actualizarEstado((actual) => ({
       ...actual,
       solicitudes: actual.solicitudes.map((item) => item.id === id ? actualizada : item),
@@ -276,6 +286,42 @@ export function renderizarFacilitador(raiz, contexto) {
     }));
     dibujar();
     mostrarAviso(raiz, "La reprogramación quedó registrada.", "exito");
+  }
+
+  function reactivarReprogramada(id) {
+    const estado = contexto.obtenerEstado();
+    const solicitud = estado.solicitudes.find((item) => item.id === id && item.estado === "REPROGRAMADA");
+    if (!solicitud) return;
+    const marca = fechaActualIso();
+    const validacion = transicionarEstado({ solicitud, estadoNuevo: "VALIDADA", responsable: "Facilitador · reactivación", fecha: marca });
+    if (!validacion.ok) return mostrarAviso(raiz, validacion.mensaje, "error");
+    const solicitudValidada = { ...validacion.solicitudActualizada, ...solicitud, estado: "VALIDADA", fechaServicio: solicitud.fechaReprogramada || solicitud.fechaServicio };
+    const hogar = estado.hogares.find((item) => item.id === solicitud.hogarId);
+    const plan = asignarSolicitud({
+      solicitud: solicitudValidada,
+      hogar,
+      recicladores: estado.recicladores,
+      solicitudes: estado.solicitudes,
+      parametros: estado.parametros,
+      distanciasKm: estado.distanciasKm,
+    });
+    const final = transicionarEstado({
+      solicitud: solicitudValidada,
+      estadoNuevo: plan.estado,
+      responsable: "Motor de asignación tras reprogramación",
+      fecha: fechaActualIso(),
+      recicladorId: plan.ok ? plan.candidato.id : null,
+    });
+    if (!final.ok) return mostrarAviso(raiz, final.mensaje, "error");
+    const actualizada = { ...final.solicitudActualizada, ...plan.solicitudActualizada, fechaServicio: solicitudValidada.fechaServicio, estado: plan.estado };
+    contexto.actualizarEstado((actual) => ({
+      ...actual,
+      solicitudes: actual.solicitudes.map((item) => item.id === id ? actualizada : item),
+      eventos: [...actual.eventos, validacion.evento, final.evento],
+      mensajes: [...actual.mensajes, crearMensaje(plan.ok ? plan.candidato.nombre || plan.candidato.id : "Facilitador", plan.ok ? `Nueva oferta para la solicitud reprogramada ${id}.` : `La solicitud ${id} sigue sin candidato y requiere gestión.`)],
+    }));
+    dibujar();
+    mostrarAviso(raiz, plan.ok ? "La solicitud reprogramada volvió a asignación." : "No hay candidato; la solicitud regresó a la bandeja de escalados.", plan.ok ? "exito" : "info");
   }
 
   dibujar();

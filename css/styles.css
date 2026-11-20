@@ -40,7 +40,12 @@ a { color: var(--verde-oscuro); }
 .controles-superiores label { font-weight: 700; }
 .controles-superiores select { width: 100%; padding: 8px 12px; border: 1px solid #fff; border-radius: 6px; color: #163d2c; background: #fff; }
 .solo-lector { grid-column: 2; color: #e0f2e7; font-size: 1rem; }
-.boton-pruebas { grid-column: 2; justify-self: start; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+.boton-pruebas { grid-column: 2; justify-self: start; display: inline-flex; align-items: center; justify-content: center; margin-top: 6px; text-decoration: none; color: var(--verde-oscuro); background: #fff; border-color: #fff; }
+.boton-pruebas:hover { background: var(--verde-claro); }
+.boton-pruebas:focus-visible { outline-color: #ffd27a; }
+
+
+
 
 .contenedor-principal { width: min(100% - 32px, 1040px); margin: 28px auto; flex: 1; }
 .vista-rol { display: grid; gap: 18px; }

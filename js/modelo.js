@@ -87,8 +87,9 @@ export function crearEvento({
   estadoNuevo,
   responsable,
   fecha,
+  recicladorId = null,
 }) {
-  return { solicitudId, estadoAnterior, estadoNuevo, responsable, fecha };
+  return { solicitudId, estadoAnterior, estadoNuevo, responsable, fecha, ...(recicladorId ? { recicladorId } : {}) };
 }
 
 /** Crea un mensaje que se mostrará en la bandeja simulada. */

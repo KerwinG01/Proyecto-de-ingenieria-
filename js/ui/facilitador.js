@@ -156,6 +156,7 @@ export function renderizarFacilitador(raiz, contexto) {
       estadoNuevo: plan.estado,
       responsable: "Motor de asignación",
       fecha: fechaActualIso(),
+      recicladorId: plan.ok ? plan.candidato.id : null,
     });
     const solicitudFinal = { ...transicionFinal.solicitudActualizada, ...plan.solicitudActualizada, estado: plan.estado };
     const mensajes = [crearMensaje(hogar.alias, `La solicitud ${solicitud.id} quedó ${textoEstado(plan.estado)}.`)];
@@ -240,6 +241,7 @@ export function renderizarFacilitador(raiz, contexto) {
       estadoNuevo: "ASIGNADA",
       responsable: "Facilitador · asignación manual",
       fecha: fechaActualIso(),
+      recicladorId,
     });
     if (!transicion.ok) return mostrarAviso(raiz, transicion.mensaje, "error");
     const actualizada = { ...transicion.solicitudActualizada, estado: "ASIGNADA", recicladorId };

@@ -22,6 +22,8 @@ export function renderizarAdministrador(raiz, contexto) {
       <div class="campo-cupo">
         <label for="cupo-${escaparHtml(reciclador.id)}">Cupo de ${escaparHtml(reciclador.nombre || reciclador.id)}</label>
         <input id="cupo-${escaparHtml(reciclador.id)}" name="cupo-${escaparHtml(reciclador.id)}" type="number" min="1" step="1" value="${escaparHtml(reciclador.cupo)}" required>
+        <label for="confiabilidad-${escaparHtml(reciclador.id)}">Confiabilidad de ${escaparHtml(reciclador.nombre || reciclador.id)} (0 a 1)</label>
+        <input id="confiabilidad-${escaparHtml(reciclador.id)}" name="confiabilidad-${escaparHtml(reciclador.id)}" type="number" min="0" max="1" step="0.01" value="${escaparHtml(reciclador.tasaConfiabilidad ?? 0.70)}" required>
       </div>`).join("");
 
     raiz.innerHTML = `
@@ -62,9 +64,10 @@ export function renderizarAdministrador(raiz, contexto) {
             </div>
           </fieldset>
           <fieldset>
-            <legend>Materiales y cupos</legend>
+            <legend>Materiales, cupos y confiabilidad</legend>
             <label for="param-materiales">Materiales aceptados, separados por coma</label>
             <input id="param-materiales" name="materialesAceptados" value="${escaparHtml(parametros.materialesAceptados.join(", "))}" required>
+            <p class="texto-ayuda">La confiabilidad se edita con base en la evaluación del piloto. Se inicia en 0,70; no se recalcula automáticamente porque aún no se ha definido una fórmula de actualización por resultados.</p>
             <div class="rejilla-campos">${recicladores || "<p>No hay recicladores registrados.</p>"}</div>
           </fieldset>
           <div class="acciones">
@@ -208,6 +211,14 @@ export function renderizarAdministrador(raiz, contexto) {
       const cambio = actualizarCupoReciclador(nuevosRecicladores, reciclador.id, validacionCupo.cupo);
       if (!cambio.ok) return mostrarAviso(raiz, cambio.mensaje || "No se pudo actualizar un cupo.", "error");
       nuevosRecicladores = cambio.recicladores;
+      const campoConfiabilidad = formulario.elements[`confiabilidad-${reciclador.id}`];
+      const tasaConfiabilidad = Number(campoConfiabilidad?.value);
+      if (!Number.isFinite(tasaConfiabilidad) || tasaConfiabilidad < 0 || tasaConfiabilidad > 1) {
+        return mostrarAviso(raiz, `La confiabilidad de ${reciclador.nombre || reciclador.id} debe estar entre 0 y 1.`, "error");
+      }
+      nuevosRecicladores = nuevosRecicladores.map((item) => item.id === reciclador.id
+        ? { ...item, tasaConfiabilidad }
+        : item);
     }
 
     const guardado = guardarParametros(validacion.parametros);

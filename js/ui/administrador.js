@@ -8,6 +8,8 @@ import {
 } from "../parametros.js";
 import { escaparHtml, mostrarAviso } from "./comun.js";
 
+const SOLICITUD_DEMO_PARA_ELIMINAR = "SOL-4ccecacb-0d98-4934-a64c-654d1018a481";
+
 export function renderizarAdministrador(raiz, contexto) {
   dibujar();
 
@@ -68,6 +70,7 @@ export function renderizarAdministrador(raiz, contexto) {
             <button class="boton secundario" type="button" id="restaurar-parametros">Restablecer parámetros base</button>
           </div>
         </form>
+        ${dibujarEliminacionDemo(estado)}
         <section class="tarjeta bloque-proximamente" aria-labelledby="indicadores-titulo">
           <h2 id="indicadores-titulo">Indicadores y modo de prueba</h2>
           <p>El panel de indicadores corresponde a E6 y las simulaciones al modo de prueba de E7.</p>
@@ -76,6 +79,40 @@ export function renderizarAdministrador(raiz, contexto) {
 
     raiz.querySelector("#form-parametros").addEventListener("submit", guardar);
     raiz.querySelector("#restaurar-parametros").addEventListener("click", restaurar);
+    raiz.querySelector("[data-eliminar-solicitud-demo]")?.addEventListener("click", eliminarSolicitudDemo);
+  }
+
+  function dibujarEliminacionDemo(estado) {
+    const existe = estado.solicitudes.some((solicitud) => solicitud.id === SOLICITUD_DEMO_PARA_ELIMINAR);
+    return `
+      <section class="tarjeta bloque-eliminacion" aria-labelledby="eliminar-demo-titulo">
+        <h2 id="eliminar-demo-titulo">Solicitud de prueba</h2>
+        <p><strong>${SOLICITUD_DEMO_PARA_ELIMINAR}</strong></p>
+        ${existe
+          ? `<p>Al eliminarla se quitarán también sus eventos y mensajes simulados asociados en este navegador.</p><button class="boton peligro" type="button" data-eliminar-solicitud-demo>Eliminar esta solicitud demo</button>`
+          : `<p>Esta solicitud no aparece en los datos guardados de este navegador.</p>`}
+      </section>`;
+  }
+
+  function eliminarSolicitudDemo() {
+    const estado = contexto.obtenerEstado();
+    const solicitud = estado.solicitudes.find((item) => item.id === SOLICITUD_DEMO_PARA_ELIMINAR);
+    if (!solicitud) return mostrarAviso(raiz, "La solicitud no está en el almacenamiento de este navegador.", "info");
+    const confirmar = window.confirm(
+      `¿Eliminar ${SOLICITUD_DEMO_PARA_ELIMINAR}? Se quitarán la solicitud, sus eventos y sus mensajes simulados asociados de este navegador. Esta acción no se puede deshacer desde Ciudad Verde.`
+    );
+    if (!confirmar) return;
+
+    contexto.actualizarEstado((actual) => ({
+      ...actual,
+      solicitudes: actual.solicitudes.filter((item) => item.id !== SOLICITUD_DEMO_PARA_ELIMINAR),
+      eventos: actual.eventos.filter((evento) => evento.solicitudId !== SOLICITUD_DEMO_PARA_ELIMINAR),
+      mensajes: actual.mensajes.filter((mensaje) =>
+        !String(mensaje.texto).includes(SOLICITUD_DEMO_PARA_ELIMINAR) &&
+        !String(mensaje.destinatario).includes(SOLICITUD_DEMO_PARA_ELIMINAR)
+      ),
+    }));
+    mostrarAviso(raiz, "La solicitud demo y sus registros asociados fueron eliminados de este navegador.", "exito");
   }
 
   function leerFormulario(formulario) {

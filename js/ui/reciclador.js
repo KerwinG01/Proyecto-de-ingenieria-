@@ -94,6 +94,7 @@ export function renderizarReciclador(raiz, contexto) {
       estadoNuevo: resultado.estado,
       responsable: `Reciclador · ${recicladorId}`,
       fecha: marca,
+      recicladorId: resultado.estado === "ASIGNADA" ? resultado.recicladorId : null,
     });
     if (!transicion.ok) return mostrarAviso(raiz, transicion.mensaje, "error");
 
@@ -147,6 +148,7 @@ export function renderizarReciclador(raiz, contexto) {
       estadoNuevo,
       responsable: `Reciclador · ${recicladorId}`,
       fecha: fechaActualIso(),
+      recicladorId,
     });
     if (!transicion.ok) return mostrarAviso(raiz, transicion.mensaje, "error");
     const actualizada = { ...transicion.solicitudActualizada, ...datosExtra };

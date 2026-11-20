@@ -202,6 +202,19 @@ export function calcularPuntaje({
   return { P, H, E, R, S };
 }
 
+/** Calcula R desde resultados cerrados; conserva el valor base si aún no hay recolecciones finales. */
+export function calcularTasaConfiabilidad(reciclador, solicitudes = []) {
+  const asignadasDelReciclador = solicitudes.filter((solicitud) => solicitud.recicladorId === reciclador?.id);
+  const atendidas = asignadasDelReciclador.filter((solicitud) => solicitud.estado === "ATENDIDA").length;
+  const fallidas = asignadasDelReciclador.filter((solicitud) => solicitud.estado === "FALLIDA").length;
+  const finalizadas = atendidas + fallidas;
+  if (finalizadas === 0) {
+    const valorBase = Number(reciclador?.tasaConfiabilidad);
+    return Number.isFinite(valorBase) ? valorBase : 0.70;
+  }
+  return atendidas / finalizadas;
+}
+
 /** Devuelve candidatos compatibles ordenados por puntaje y después por ID. */
 export function rankearCandidatos({
   solicitud,
@@ -219,13 +232,21 @@ export function rankearCandidatos({
     ).length;
     return [reciclador.id, Math.max(Number(reciclador.asignacionesHistoricas) || 0, observadas)];
   }));
+  const confiabilidadPorId = new Map(recicladores.map((reciclador) => [
+    reciclador.id,
+    calcularTasaConfiabilidad(reciclador, solicitudes),
+  ]));
   const maxHistorico = Math.max(0, ...historicasPorId.values());
   const evaluados = recicladores.map((reciclador) => {
     const distanciaKm = obtenerDistanciaKm({ solicitud, hogar, reciclador, distanciasKm });
     const compatibilidad = evaluarCompatibilidad({ solicitud, hogar, reciclador, solicitudes, parametros: config, distanciaKm });
     const puntaje = calcularPuntaje({
       hogar,
-      reciclador: { ...reciclador, asignacionesHistoricas: historicasPorId.get(reciclador.id) },
+      reciclador: {
+        ...reciclador,
+        asignacionesHistoricas: historicasPorId.get(reciclador.id),
+        tasaConfiabilidad: confiabilidadPorId.get(reciclador.id),
+      },
       cantidadAsignada: compatibilidad.cantidadAsignada,
       asignacionesHistoricasMaximas: maxHistorico,
       distanciaKm,

@@ -13,6 +13,7 @@ const bandejaMensajes = document.querySelector("#mensajes-simulados");
 const estadoInicial = leerEstado();
 let estado = estadoInicial.estado;
 let panelCuenta = null;
+let rolActivo = selectorRol.value;
 
 const vistas = {
   ciudadano: renderizarCiudadano,
@@ -42,8 +43,10 @@ function dibujarBandeja() {
 function dibujarVista() {
   if (panelCuenta) {
     renderizarAutenticacion(elementoVista, {
+      seleccionarPanel: (panel) => { selectorRol.value = `cuenta-${panel}`; },
       cerrar: () => {
         panelCuenta = null;
+        selectorRol.value = rolActivo;
         dibujarVista();
       },
     }, panelCuenta);
@@ -67,15 +70,16 @@ function dibujarVista() {
 }
 
 selectorRol.addEventListener("change", () => {
+  if (selectorRol.value.startsWith("cuenta-")) {
+    panelCuenta = selectorRol.value.replace("cuenta-", "");
+    anunciar(`Vista demo: ${panelCuenta === "registro" ? "crear usuario" : panelCuenta === "login" ? "iniciar sesión" : "perfil"}.`, "info");
+    dibujarVista();
+    return;
+  }
+  rolActivo = selectorRol.value;
+  panelCuenta = null;
   anunciar("Rol simulado cambiado. No se requiere autenticación.", "info");
   dibujarVista();
-});
-
-document.querySelectorAll("[data-vista-cuenta]").forEach((boton) => {
-  boton.addEventListener("click", () => {
-    panelCuenta = boton.dataset.vistaCuenta;
-    dibujarVista();
-  });
 });
 
 dibujarBandeja();

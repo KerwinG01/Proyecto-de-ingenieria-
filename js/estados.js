@@ -42,7 +42,7 @@ export function esTransicionPermitida(estadoAnterior, estadoNuevo) {
  * Cambia el estado de una solicitud de forma inmutable y genera el evento.
  * La fecha debe ser proporcionada por la capa que invoca esta función.
  */
-export function transicionarEstado({ solicitud, estadoNuevo, responsable, fecha }) {
+export function transicionarEstado({ solicitud, estadoNuevo, responsable, fecha, recicladorId = null }) {
   if (!solicitud || typeof solicitud !== "object") {
     return {
       ok: false,
@@ -107,6 +107,7 @@ export function transicionarEstado({ solicitud, estadoNuevo, responsable, fecha 
     estadoNuevo,
     responsable: responsable.trim(),
     fecha,
+    ...(estadoNuevo === "ASIGNADA" ? { recicladorId: recicladorId || solicitud.recicladorId || null } : {}),
   };
 
   return {

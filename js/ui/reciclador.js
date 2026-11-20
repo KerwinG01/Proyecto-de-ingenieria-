@@ -1,4 +1,4 @@
-import { resolverCascada } from "../motor.js";
+import { calcularTasaConfiabilidad, resolverCascada } from "../motor.js";
 import { transicionarEstado } from "../estados.js";
 import { crearMensaje, fechaActualIso } from "./servicios.js";
 import { escaparHtml, textoEstado, mostrarAviso } from "./comun.js";
@@ -152,12 +152,19 @@ export function renderizarReciclador(raiz, contexto) {
     });
     if (!transicion.ok) return mostrarAviso(raiz, transicion.mensaje, "error");
     const actualizada = { ...transicion.solicitudActualizada, ...datosExtra };
-    contexto.actualizarEstado((actual) => ({
-      ...actual,
-      solicitudes: actual.solicitudes.map((item) => item.id === id ? actualizada : item),
-      eventos: [...actual.eventos, transicion.evento],
-      mensajes: [...actual.mensajes, crearMensaje(solicitud.hogarId, `La solicitud ${id} quedó ${textoEstado(estadoNuevo)}.`)],
-    }));
+    contexto.actualizarEstado((actual) => {
+      const solicitudesActualizadas = actual.solicitudes.map((item) => item.id === id ? actualizada : item);
+      const recicladoresActualizados = actual.recicladores.map((item) => item.id === recicladorId
+        ? { ...item, tasaConfiabilidad: calcularTasaConfiabilidad(item, solicitudesActualizadas) }
+        : item);
+      return {
+        ...actual,
+        solicitudes: solicitudesActualizadas,
+        recicladores: recicladoresActualizados,
+        eventos: [...actual.eventos, transicion.evento],
+        mensajes: [...actual.mensajes, crearMensaje(solicitud.hogarId, `La solicitud ${id} quedó ${textoEstado(estadoNuevo)}.`)],
+      };
+    });
     dibujar();
     mostrarAviso(raiz, `Resultado registrado: ${textoEstado(estadoNuevo)}.`, "exito");
   }

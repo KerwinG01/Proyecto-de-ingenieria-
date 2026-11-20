@@ -35,6 +35,17 @@ export function fechaLegible(fecha) {
   }).format(valor);
 }
 
+/** Devuelve la fecha local del sábado más próximo, incluido hoy si ya es sábado. */
+export function fechaSabadoProximo() {
+  const fecha = new Date();
+  fecha.setHours(0, 0, 0, 0);
+  fecha.setDate(fecha.getDate() + ((6 - fecha.getDay() + 7) % 7));
+  const anio = fecha.getFullYear();
+  const mes = String(fecha.getMonth() + 1).padStart(2, "0");
+  const dia = String(fecha.getDate()).padStart(2, "0");
+  return `${anio}-${mes}-${dia}`;
+}
+
 export function mostrarAviso(contenedor, texto, tipo = "info") {
   const aviso = contenedor.querySelector("[data-aviso]");
   if (!aviso) return;

@@ -684,6 +684,7 @@
   <script type="module">
     import { cargarEscenarioPrueba } from "../js/escenario-prueba.js";
     import { crearDatosIniciales, guardarEstado } from "../js/ui/servicios.js";
+    import { borrarCuentasDemo } from "../js/ui/autenticacion.js";
 
     const escapar = (texto) => String(texto ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
     const estadoEscenario = document.querySelector("#estado-escenario");
@@ -691,12 +692,13 @@
     const detalleEscenario = document.querySelector("#detalle-escenario");
 
     document.querySelector("#borrar-datos").addEventListener("click", () => {
-      if (!window.confirm("¿Borrar las solicitudes, eventos y mensajes de la demo guardados en este navegador y volver a los datos base?")) return;
+      if (!window.confirm("¿Borrar las solicitudes, eventos, mensajes, hogares registrados y cuentas demo de este navegador y volver a los datos base?")) return;
+      borrarCuentasDemo();
       const resultado = guardarEstado(crearDatosIniciales());
       detalleEscenario.hidden = true;
       tablaEscenario.replaceChildren();
       estadoEscenario.textContent = resultado.ok
-        ? "Datos de la demo borrados: quedan solo los datos base (1 hogar y los recicladores R1–R4). Si la demo está abierta, recárgala."
+        ? "Datos de la demo y cuentas demo borrados: quedan solo los datos base (1 hogar y los recicladores R1–R4). Si la demo está abierta, recárgala."
         : `No se pudieron borrar los datos: ${resultado.mensaje}`;
     });
 

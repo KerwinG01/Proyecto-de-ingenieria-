@@ -7,10 +7,10 @@ export function renderizarInicio(raiz, contexto) {
   raiz.innerHTML = `
     <section class="vista-rol vista-inicio" aria-labelledby="titulo-inicio">
       <header class="portada-inicio">
-        <p class="ceja">Microzona piloto · San Eduardo, Cúcuta</p>
+        <p class="ceja">Microzona piloto</p>
         <h1 id="titulo-inicio">Ciudad <span>Verde</span></h1>
         <p class="bajada-inicio">Conectamos hogares y recicladores de oficio para coordinar la recolección de materiales reciclables de forma organizada.</p>
-        <p>La recolección piloto se programa para los sábados, entre las 8:00 a. m. y las 12:00 p. m. Las notificaciones de WhatsApp y SMS se representan en una bandeja dentro de esta página.</p>
+        <p>La recolección piloto se programa para los sábados, entre las 8:00 a. m. y las 12:00 p. m.</p>
         <button class="boton primario" type="button" data-ir-rol="reciclador">Ver vista del reciclador</button>
       </header>
 

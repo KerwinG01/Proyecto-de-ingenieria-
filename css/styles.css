@@ -162,3 +162,11 @@ legend { padding: 0 6px; }
 
 .meta-indicador { margin: 6px 0; padding: 6px 10px; border-left: 4px solid var(--verde); background: var(--verde-claro); }
 #contenedor-modo-prueba { margin-top: 18px; }
+.grupo-hogar { margin-top: 6px; background: #f6fbf8; }
+.grupo-hogar[hidden] { display: none; }
+.grupo-hogar .opcion-material { display: flex; align-items: flex-start; gap: 10px; font-weight: 600; }
+.grupo-hogar .opcion-material input { flex: none; margin-top: 2px; }
+.hogar-sesion { margin-bottom: 14px; }
+.hogar-sesion p { margin: 4px 0; }
+.hogar-sesion .acciones { margin-top: 8px; }
+.hogar-vinculado { margin-bottom: 16px; border-left: 5px solid var(--verde); }

@@ -1,19 +1,23 @@
 /* Modo de prueba y gráficos: estilos autónomos, usados por index.html y test/tests.html. */
+.mp *, .mp *::before, .mp *::after, .mp-desplegable, .mp-desplegable *, .mp-acciones * { box-sizing: border-box; }
 .mp { display: grid; gap: 18px; color: #173a2d; }
 .mp-encabezado { padding: 20px; border: 1px solid #b8d2c2; border-radius: 12px; background: linear-gradient(110deg, #eaf6ed, #fff 72%); }
 .mp-encabezado h2 { margin: 0 0 6px; color: #073f2d; }
 .mp-encabezado p { margin: 4px 0; }
 .mp-bloque { min-width: 0; padding: 20px; border: 1px solid #b8d2c2; border-radius: 12px; background: #fff; box-shadow: 0 2px 8px rgb(12 69 43 / 5%); }
-.mp-bloque h3 { margin: 0 0 8px; color: #073f2d; font-size: 1.15rem; }
-.mp-bloque > p { margin: 0 0 12px; }
+.mp-bloque h3 { margin: 0; color: #073f2d; font-size: 1.15rem; }
+.mp-cuerpo { padding-top: 12px; }
+.mp-cuerpo > p { margin: 0 0 12px; }
 .mp-formulario { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; align-items: end; margin-bottom: 12px; }
 .mp-formulario label { display: grid; gap: 4px; font-weight: 600; }
 .mp-formulario input[type="number"], .mp-formulario input:not([type]) { min-height: 44px; padding: 8px 10px; border: 1px solid #7f9c8b; border-radius: 6px; font: inherit; }
 .mp-formulario fieldset { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0; padding: 6px 10px; border: 1px solid #b8d2c2; border-radius: 6px; }
 .mp-formulario legend { padding: 0 4px; font-weight: 600; }
 .mp-opcion { display: inline-flex !important; grid-auto-flow: column; align-items: center; gap: 6px !important; font-weight: 400 !important; min-height: 32px; }
-.mp-boton { min-height: 44px; padding: 10px 16px; border: 2px solid #0b7445; border-radius: 7px; color: #fff; background: #0b7445; font: inherit; font-weight: 700; cursor: pointer; }
+.mp-boton { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 10px 16px; border: 2px solid #0b7445; border-radius: 7px; color: #fff; background: #0b7445; font: inherit; font-weight: 700; line-height: 1.2; text-align: center; text-decoration: none; cursor: pointer; }
 .mp-boton.mp-secundario { color: #075239; background: #fff; }
+.mp-boton.mp-peligro { border-color: #b42318; color: #9f1d14; background: #fff; }
+.mp-boton:hover:not(:disabled) { filter: brightness(1.06); }
 .mp-boton:disabled { cursor: progress; opacity: 0.6; }
 .mp-boton:focus-visible, .mp-formulario input:focus-visible, .graf-punto:focus-visible { outline: 3px solid #955600; outline-offset: 2px; }
 .mp-acciones { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0 0; }
@@ -49,4 +53,27 @@
 
 @media (max-width: 700px) {
   .mp-bloque, .mp-encabezado { padding: 14px; }
+}
+
+/* Secciones desplegables */
+.mp-bloque > summary, .mp-desplegable > summary, .graf-tabla > summary {
+  display: flex; align-items: center; gap: 12px; min-height: 44px; cursor: pointer; list-style: none;
+}
+.mp-bloque > summary::-webkit-details-marker, .mp-desplegable > summary::-webkit-details-marker, .graf-tabla > summary::-webkit-details-marker { display: none; }
+.mp-bloque > summary::before, .mp-desplegable > summary::before, .graf-tabla > summary::before {
+  content: ""; flex: none; width: 9px; height: 9px; margin: 0 4px; border-right: 2.5px solid #0b7445; border-bottom: 2.5px solid #0b7445;
+  transform: rotate(-45deg); transition: transform 0.15s ease;
+}
+.mp-bloque[open] > summary::before, .mp-desplegable[open] > summary::before, .graf-tabla[open] > summary::before { transform: rotate(45deg); }
+.mp-bloque > summary:focus-visible, .mp-desplegable > summary:focus-visible, .graf-tabla > summary:focus-visible { outline: 3px solid #955600; outline-offset: 3px; border-radius: 6px; }
+.mp-bloque > summary h3 { flex: 1; }
+.mp-chip { flex: none; padding: 3px 10px; border: 1px solid #b8d2c2; border-radius: 999px; color: #44574d; background: #f3f8f5; font-size: 0.85rem; font-weight: 600; }
+.mp-chip.mp-chip-listo { border-color: #0b7445; color: #075239; background: #e7f4ec; }
+.mp-desplegable { margin: 12px 0; padding: 8px 14px; border: 1px solid #c9ddd1; border-radius: 10px; background: #fff; }
+.mp-desplegable > summary { font-weight: 700; color: #075239; }
+.mp-desplegable[open] > summary { margin-bottom: 8px; }
+.graf-tabla > summary { min-height: 36px; }
+@media (max-width: 560px) {
+  .mp-acciones .mp-boton { flex: 1 1 100%; }
+  .mp-bloque > summary { flex-wrap: wrap; }
 }

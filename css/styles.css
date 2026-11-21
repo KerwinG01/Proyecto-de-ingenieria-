@@ -127,7 +127,9 @@ legend { padding: 0 6px; }
 .portada-inicio h1 span { color: var(--verde); }
 .bajada-inicio { max-width: 760px; color: #173a2d; font-size: 1.25rem; font-weight: 600; }
 .portada-inicio > p:not(.ceja) { max-width: 780px; }
-.portada-inicio .boton { margin-top: 10px; }
+.portada-inicio .acciones { margin-top: 6px; }
+.portada-inicio .boton { display: inline-flex; align-items: center; text-decoration: none; }
+.etiqueta-demo { display: inline-block; margin: 6px 0 0; padding: 4px 12px; border: 1px solid var(--borde); border-radius: 999px; color: var(--verde-oscuro); background: #fff; font-size: 0.9rem; font-weight: 700; }
 .rejilla-inicio { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
 .paso-inicio .numero-paso { display: inline-grid; width: 40px; height: 40px; place-items: center; border-radius: 50%; color: #fff; background: var(--verde-oscuro); font-weight: 800; }
 .paso-inicio h3 { margin: 12px 0 6px; }

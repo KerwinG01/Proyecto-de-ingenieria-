@@ -221,19 +221,23 @@ export function renderizarModoPrueba(contenedor, { obtenerEstado, origen = "Dato
         <div class="mp-acciones">
           <button class="mp-boton" type="button" data-ejecutar-todo>Ejecutar todos los experimentos</button>
           <button class="mp-boton mp-secundario" type="button" data-matriz>Descargar matriz completa (CSV)</button>
+          <button class="mp-boton mp-secundario" type="button" data-plegar>Expandir todo</button>
         </div>
         <p class="mp-estado" data-estado role="status" aria-live="polite"></p>
       </header>
 
-      <article class="mp-bloque" aria-labelledby="mp-kpi">
-        <h3 id="mp-kpi">KPI frente a metas</h3>
+      <details class="mp-bloque" data-bloque="kpi">
+        <summary><h3 id="mp-kpi">KPI frente a metas</h3><span class="mp-chip" data-chip="kpi">Sin ejecutar</span></summary>
+        <div class="mp-cuerpo">
         <p>Calcula K2, K3, K6 y K7 con el historial de eventos guardado. Si se cargó el escenario de prueba, los tiempos provienen de un reloj simulado (pasos de 3 minutos).</p>
         <button class="mp-boton" type="button" data-ejecutar="kpi">Calcular KPI</button>
         <div data-resultado="kpi"></div>
-      </article>
+        </div>
+      </details>
 
-      <article class="mp-bloque" aria-labelledby="mp-sim01">
-        <h3 id="mp-sim01">SIM-01 · Cascada de confirmación frente a la ecuación 11</h3>
+      <details class="mp-bloque" data-bloque="sim01">
+        <summary><h3 id="mp-sim01">SIM-01 · Cascada de confirmación frente a la ecuación 11</h3><span class="mp-chip" data-chip="sim01">Sin ejecutar</span></summary>
+        <div class="mp-cuerpo">
         <form class="mp-formulario" data-form="sim01">
           <label>p (aceptación)<input name="p" type="number" min="0" max="1" step="0.01" value="0.70" required></label>
           <label>k (intentos)<input name="k" type="number" min="1" max="10" step="1" value="3" required></label>
@@ -243,10 +247,12 @@ export function renderizarModoPrueba(contenedor, { obtenerEstado, origen = "Dato
           <button class="mp-boton" type="submit">Ejecutar SIM-01</button>
         </form>
         <div data-resultado="sim01"></div>
-      </article>
+        </div>
+      </details>
 
-      <article class="mp-bloque" aria-labelledby="mp-sim02">
-        <h3 id="mp-sim02">SIM-02 · Barrido de la probabilidad de aceptación</h3>
+      <details class="mp-bloque" data-bloque="sim02">
+        <summary><h3 id="mp-sim02">SIM-02 · Barrido de la probabilidad de aceptación</h3><span class="mp-chip" data-chip="sim02">Sin ejecutar</span></summary>
+        <div class="mp-cuerpo">
         <form class="mp-formulario" data-form="sim02">
           <label>Valores de p (separados por coma)<input name="valores" value="0.5, 0.6, 0.7, 0.8, 0.9" required></label>
           <label>k (intentos)<input name="k" type="number" min="1" max="10" step="1" value="3" required></label>
@@ -255,10 +261,12 @@ export function renderizarModoPrueba(contenedor, { obtenerEstado, origen = "Dato
           <button class="mp-boton" type="submit">Ejecutar SIM-02</button>
         </form>
         <div data-resultado="sim02"></div>
-      </article>
+        </div>
+      </details>
 
-      <article class="mp-bloque" aria-labelledby="mp-esc01">
-        <h3 id="mp-esc01">ESC-01 · Escalabilidad del motor de asignación</h3>
+      <details class="mp-bloque" data-bloque="esc01">
+        <summary><h3 id="mp-esc01">ESC-01 · Escalabilidad del motor de asignación</h3><span class="mp-chip" data-chip="esc01">Sin ejecutar</span></summary>
+        <div class="mp-cuerpo">
         <form class="mp-formulario" data-form="esc01">
           <label>Tamaños de lote (n)<input name="tamanos" value="50, 100, 200, 400, 800, 1600" required></label>
           <label>Repeticiones<input name="repeticiones" type="number" min="1" max="10" step="1" value="3" required></label>
@@ -271,16 +279,19 @@ export function renderizarModoPrueba(contenedor, { obtenerEstado, origen = "Dato
         </form>
         <progress data-progreso="esc01" max="1" value="0" hidden></progress>
         <div data-resultado="esc01"></div>
-      </article>
+        </div>
+      </details>
 
-      <article class="mp-bloque" aria-labelledby="mp-ren01">
-        <h3 id="mp-ren01">REN-01 · Rendimiento de la operación de registro</h3>
+      <details class="mp-bloque" data-bloque="ren01">
+        <summary><h3 id="mp-ren01">REN-01 · Rendimiento de la operación de registro</h3><span class="mp-chip" data-chip="ren01">Sin ejecutar</span></summary>
+        <div class="mp-cuerpo">
         <form class="mp-formulario" data-form="ren01">
           <label>Operaciones<input name="operaciones" type="number" min="1" max="200" step="1" value="20" required></label>
           <button class="mp-boton" type="submit">Ejecutar REN-01</button>
         </form>
         <div data-resultado="ren01"></div>
-      </article>
+        </div>
+      </details>
     </section>`;
 
   const estadoTexto = contenedor.querySelector("[data-estado]");
@@ -289,6 +300,10 @@ export function renderizarModoPrueba(contenedor, { obtenerEstado, origen = "Dato
     const destino = contenedor.querySelector(`[data-resultado="${clave}"]`);
     const r = resultados[clave];
     if (!destino || !r) return;
+    const bloque = contenedor.querySelector(`[data-bloque="${clave}"]`);
+    if (bloque) bloque.open = true;
+    const chip = contenedor.querySelector(`[data-chip="${clave}"]`);
+    if (chip) { chip.textContent = "Con resultados"; chip.classList.add("mp-chip-listo"); }
     destino.innerHTML = clave === "kpi" ? htmlKpi(r)
       : clave === "sim01" ? htmlSim01(r)
         : clave === "sim02" ? htmlSim02(r)
@@ -356,6 +371,8 @@ export function renderizarModoPrueba(contenedor, { obtenerEstado, origen = "Dato
     try {
       for (const clave of claves) {
         avisar(`Ejecutando ${NOMBRES[clave]}…`);
+        const bloque = contenedor.querySelector(`[data-bloque="${clave}"]`);
+        if (bloque) bloque.open = true;
         await new Promise((r) => setTimeout(r, 30));
         await ejecutores[clave]();
         pintar(clave);
@@ -378,6 +395,17 @@ export function renderizarModoPrueba(contenedor, { obtenerEstado, origen = "Dato
   });
   contenedor.querySelector('[data-ejecutar="kpi"]').addEventListener("click", () => ejecutar(["kpi"]));
   contenedor.querySelector("[data-ejecutar-todo]").addEventListener("click", () => ejecutar(["kpi", "sim01", "sim02", "esc01", "ren01"]));
+  const botonPlegar = contenedor.querySelector("[data-plegar]");
+  const bloques = () => [...contenedor.querySelectorAll(".mp-bloque")];
+  const actualizarPlegar = () => {
+    botonPlegar.textContent = bloques().some((bloque) => bloque.open) ? "Contraer todo" : "Expandir todo";
+  };
+  botonPlegar.addEventListener("click", () => {
+    const abrir = !bloques().some((bloque) => bloque.open);
+    bloques().forEach((bloque) => { bloque.open = abrir; });
+    actualizarPlegar();
+  });
+  bloques().forEach((bloque) => bloque.addEventListener("toggle", actualizarPlegar));
   contenedor.querySelector("[data-matriz]").addEventListener("click", () => {
     if (!Object.values(resultados).some(Boolean)) return avisar("Ejecuta al menos un experimento antes de descargar la matriz.");
     descargar(`ciudad-verde_matriz-validacion_${fechaArchivo()}.csv`, matrizCompleta());

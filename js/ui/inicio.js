@@ -1,4 +1,8 @@
 /** Presentación inicial del prototipo y orientación para cada rol simulado. */
+import { mostrarAviso } from "./comun.js";
+import { crearDatosIniciales } from "./servicios.js";
+import { descartarKpiCalculados } from "./modo-prueba.js";
+
 export function renderizarInicio(raiz, contexto) {
   const estado = contexto.obtenerEstado();
   const totalSolicitudes = estado.solicitudes.length;
@@ -11,7 +15,11 @@ export function renderizarInicio(raiz, contexto) {
         <h1 id="titulo-inicio">Ciudad <span>Verde</span></h1>
         <p class="bajada-inicio">Conectamos hogares y recicladores de oficio para coordinar la recolección de materiales reciclables de forma organizada.</p>
         <p>La recolección piloto se programa para los sábados, entre las 8:00 a. m. y las 12:00 p. m.</p>
-        <button class="boton primario" type="button" data-ir-rol="reciclador">Ver vista del reciclador</button>
+        <p class="etiqueta-demo">Demostración interactiva del prototipo</p>
+        <div class="acciones">
+          <button class="boton primario" type="button" data-ir-rol="ciudadano">Iniciar demostración</button>
+          <a class="boton secundario" href="./test/tests.html" target="_blank" rel="noopener">Ver validación y pruebas</a>
+        </div>
       </header>
 
       <section aria-labelledby="como-funciona">
@@ -28,7 +36,11 @@ export function renderizarInicio(raiz, contexto) {
         <h2 id="resumen-piloto">Estado de esta demostración</h2>
         <p><strong>Solicitudes guardadas:</strong> ${totalSolicitudes}</p>
         <p><strong>Recicladores activos:</strong> ${totalRecicladores}</p>
-        <p class="texto-ayuda">Los datos se conservan en el almacenamiento local de este navegador.</p>
+        <p class="texto-ayuda">Los datos se conservan en el almacenamiento local de este navegador. Para empezar de cero, borra los datos de prueba: se conservan solo el hogar de demostración y los recicladores R1–R4.</p>
+        <p class="aviso" data-aviso role="status" aria-live="polite" hidden></p>
+        <div class="acciones">
+          <button class="boton peligro" type="button" data-borrar-datos>Borrar datos de prueba</button>
+        </div>
       </section>
 
       <section aria-labelledby="elige-vista">
@@ -41,4 +53,11 @@ export function renderizarInicio(raiz, contexto) {
         </div>
       </section>
     </section>`;
+
+  raiz.querySelector("[data-borrar-datos]").addEventListener("click", () => {
+    if (!window.confirm("¿Borrar las solicitudes, eventos y mensajes guardados en este navegador y volver a los datos base?")) return;
+    descartarKpiCalculados();
+    contexto.actualizarEstado(() => crearDatosIniciales());
+    mostrarAviso(raiz, "Datos de prueba borrados. La demostración volvió a los datos base.", "exito");
+  });
 }

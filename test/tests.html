@@ -10,9 +10,7 @@
     body { max-width: 1040px; margin: 0 auto; padding: 24px; color: #17342b; background: #f7fbf8; }
     h1 { margin-top: 0; font-size: 1.8rem; }
     p { line-height: 1.5; }
-    button { min-height: 44px; padding: 10px 16px; border: 2px solid #075c38; border-radius: 6px; color: #fff; background: #087443; font: inherit; font-weight: 700; cursor: pointer; }
-    button:focus-visible { outline: 3px solid #9b5b00; outline-offset: 3px; }
-    #resumen { margin: 20px 0 12px; font-weight: 700; }
+    #resumen { margin: 16px 0 4px; font-weight: 700; }
     #resultados { padding-left: 28px; }
     #resultados li { margin: 8px 0; padding: 10px; border-left: 5px solid #555; background: #fff; }
     #resultados li.correcta { border-color: #087443; }
@@ -22,12 +20,13 @@
     .seccion-validacion { margin-top: 32px; padding-top: 16px; border-top: 2px solid #c9ddd1; }
     .detalle { display: block; margin-top: 4px; white-space: pre-wrap; color: #343434; }
     code { overflow-wrap: anywhere; }
-    .acciones { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-    .enlace-boton { display: inline-flex; align-items: center; min-height: 44px; padding: 10px 16px; border: 2px solid #075c38; border-radius: 6px; color: #075c38; background: #fff; font-weight: 700; text-decoration: none; }
-    .enlace-boton:focus-visible { outline: 3px solid #9b5b00; outline-offset: 3px; }
+    .indice-validacion .mp-acciones { margin-top: 14px; }
+    .seccion-validacion > h2 { margin-top: 0; }
     #tabla-escenario table { width: 100%; border-collapse: collapse; background: #fff; }
     #tabla-escenario th, #tabla-escenario td { padding: 8px; border: 1px solid #c9ddd1; text-align: left; vertical-align: top; }
     #tabla-escenario th { background: #e7f4ec; }
+    #tabla-escenario code { white-space: nowrap; }
+    #tabla-escenario { overflow-x: auto; }
   </style>
 </head>
 <body>
@@ -41,26 +40,38 @@
         <li><a href="#escenario">Verificación en la vista demo</a></li>
         <li><a href="#experimentos">Validación experimental: KPI, SIM-01, SIM-02, ESC-01 y REN-01</a></li>
       </ol>
-      <div class="acciones" style="margin-top: 12px">
-        <a class="enlace-boton" href="../index.html" target="_blank" rel="noopener">Abrir la demo</a>
+      <div class="mp-acciones">
+        <a class="mp-boton" href="../index.html" target="_blank" rel="noopener">Abrir la demo</a>
       </div>
     </nav>
 
-    <h2 id="pruebas" class="seccion-validacion">1. Pruebas automáticas del motor</h2>
-    <p>Estas pruebas comprueban validación, compatibilidad, asignación, cascada, cupos, reparto, estados, parámetros, indicadores y experimentos. Cada caso contiene su resultado esperado en el código.</p>
-    <button id="ejecutar" type="button">Ejecutar pruebas</button>
-    <p id="resumen" role="status" aria-live="polite">Las pruebas todavía no se han ejecutado.</p>
-    <ol id="resultados"></ol>
+    <section id="pruebas" class="seccion-validacion" aria-labelledby="pruebas-titulo">
+      <h2 id="pruebas-titulo">1. Pruebas automáticas del motor</h2>
+      <p>Estas pruebas comprueban validación, compatibilidad, asignación, cascada, cupos, reparto, estados, parámetros, indicadores y experimentos. Cada caso contiene su resultado esperado en el código.</p>
+      <div class="mp-acciones">
+        <button class="mp-boton" id="ejecutar" type="button">Ejecutar pruebas</button>
+      </div>
+      <p id="resumen" role="status" aria-live="polite">Las pruebas todavía no se han ejecutado.</p>
+      <details class="mp-desplegable" id="detalle-pruebas">
+        <summary>Ver el resultado de cada prueba</summary>
+        <ol id="resultados"></ol>
+      </details>
+    </section>
 
     <section id="escenario" class="seccion-validacion" aria-labelledby="escenario-titulo">
       <h2 id="escenario-titulo">2. Verificación en la vista demo</h2>
       <p>Carga en la demo un escenario construido con el mismo motor: una solicitud por caso (CP-01, CP-02, CP-02b, CP-03b, CP-04, CAS-01, CAS-02a, CAS-02b) más solicitudes confirmadas, atendidas, fallidas y canceladas para los indicadores. <strong>Reemplaza los datos guardados de la demo en este navegador.</strong></p>
-      <div class="acciones">
-        <button id="cargar-escenario" type="button">Cargar escenario en la demo</button>
-        <a class="enlace-boton" href="../index.html" target="_blank" rel="noopener">Abrir la demo</a>
+      <div class="mp-acciones">
+        <button class="mp-boton" id="cargar-escenario" type="button">Cargar escenario en la demo</button>
+        <a class="mp-boton mp-secundario" href="../index.html" target="_blank" rel="noopener">Abrir la demo</a>
+        <button class="mp-boton mp-peligro" id="borrar-datos" type="button">Borrar datos de la demo</button>
       </div>
       <p id="estado-escenario" role="status" aria-live="polite"></p>
-      <div id="tabla-escenario"></div>
+      <details class="mp-desplegable" id="detalle-escenario" hidden>
+        <summary>Ver los casos cargados y dónde verificarlos</summary>
+        <p>Resultado esperado y obtenido por el motor; confírmalo en la vista indicada.</p>
+        <div id="tabla-escenario"></div>
+      </details>
     </section>
 
     <section id="experimentos" class="seccion-validacion" aria-labelledby="experimentos-titulo">
@@ -662,6 +673,9 @@
       const correctas = pruebas.filter((prueba) => prueba.correcta).length;
       document.querySelector("#resumen").textContent =
         `Resultado de ejecución: ${correctas} de ${pruebas.length} pruebas correctas.`;
+      const detalle = document.querySelector("#detalle-pruebas");
+      detalle.querySelector("summary").textContent = `Ver el resultado de cada prueba (${pruebas.length})`;
+      if (correctas < pruebas.length) detalle.open = true;
     }
 
     document.querySelector("#ejecutar").addEventListener("click", ejecutarPruebas);
@@ -669,10 +683,22 @@
   </script>
   <script type="module">
     import { cargarEscenarioPrueba } from "../js/escenario-prueba.js";
+    import { crearDatosIniciales, guardarEstado } from "../js/ui/servicios.js";
 
     const escapar = (texto) => String(texto ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
     const estadoEscenario = document.querySelector("#estado-escenario");
     const tablaEscenario = document.querySelector("#tabla-escenario");
+    const detalleEscenario = document.querySelector("#detalle-escenario");
+
+    document.querySelector("#borrar-datos").addEventListener("click", () => {
+      if (!window.confirm("¿Borrar las solicitudes, eventos y mensajes de la demo guardados en este navegador y volver a los datos base?")) return;
+      const resultado = guardarEstado(crearDatosIniciales());
+      detalleEscenario.hidden = true;
+      tablaEscenario.replaceChildren();
+      estadoEscenario.textContent = resultado.ok
+        ? "Datos de la demo borrados: quedan solo los datos base (1 hogar y los recicladores R1–R4). Si la demo está abierta, recárgala."
+        : `No se pudieron borrar los datos: ${resultado.mensaje}`;
+    });
 
     document.querySelector("#cargar-escenario").addEventListener("click", () => {
       try {
@@ -684,12 +710,13 @@
         estadoEscenario.textContent = `Escenario cargado: ${resultado.totalSolicitudes} solicitudes. Abre la demo (o recárgala con Ctrl + F5) y verifica cada caso en la vista indicada.`;
         tablaEscenario.innerHTML = `
           <table>
-            <caption class="detalle">Resultado esperado y obtenido por el motor; confírmalo en la vista indicada.</caption>
             <thead><tr><th scope="col">Caso</th><th scope="col">Solicitud</th><th scope="col">Esperado</th><th scope="col">Obtenido</th><th scope="col">Dónde verificar</th></tr></thead>
             <tbody>${resultado.casos.map((c) => `
               <tr><td>${escapar(c.caso)}</td><td><code>${escapar(c.solicitudId)}</code></td><td>${escapar(c.esperado)}</td><td>${escapar(c.obtenido)}</td><td>${escapar(c.vista)}</td></tr>`).join("")}
             </tbody>
           </table>`;
+        detalleEscenario.hidden = false;
+        detalleEscenario.open = true;
       } catch (error) {
         estadoEscenario.textContent = `Error al crear el escenario: ${error.message}`;
         console.error(error);

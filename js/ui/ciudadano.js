@@ -4,17 +4,49 @@ import { transicionarEstado } from "../estados.js";
 import { FRANJA_PILOTO } from "../utilidades.js";
 import { crearId, crearMensaje, fechaActualIso } from "./servicios.js";
 import { escaparHtml, fechaLegible, fechaSabadoProximo, textoEstado, mostrarAviso } from "./comun.js";
+import { obtenerHogarDeSesion } from "./autenticacion.js";
 
 export function renderizarCiudadano(raiz, contexto) {
   let pestaña = "nueva";
   let paso = 1;
   const formulario = { hogarId: "", materiales: [], bolsas: 1, fechaServicio: fechaSabadoProximo() };
   const hoy = () => fechaActualIso();
+  let sesion = null;
+  const hogarVinculado = () => sesion?.hogar || null;
+
+  function bannerSesion() {
+    if (hogarVinculado()) {
+      const hogar = hogarVinculado();
+      return `
+        <div class="tarjeta hogar-sesion">
+          <p><strong>Sesión:</strong> ${escaparHtml(sesion.usuario.nombre)} · <strong>Hogar:</strong> ${escaparHtml(hogar.alias)} (${escaparHtml(hogar.microzona)})</p>
+          <p class="texto-ayuda">Tus solicitudes se registran automáticamente a nombre de este hogar.</p>
+        </div>`;
+    }
+    if (sesion) {
+      return `
+        <div class="aviso aviso--error hogar-sesion">
+          <p>Tu cuenta de ciudadano no tiene un hogar vinculado (puede que se hayan borrado los datos de prueba).</p>
+          <div class="acciones"><button class="boton secundario" type="button" data-ir-rol="cuenta-perfil">Completar mi perfil</button></div>
+        </div>`;
+    }
+    return `
+      <div class="aviso aviso--info hogar-sesion">
+        <p><strong>Modo demostración sin sesión:</strong> elige el hogar que quieres representar. Si creas una cuenta de ciudadano con los datos de tu hogar, quedará vinculado y este paso desaparece.</p>
+        <div class="acciones"><button class="boton secundario" type="button" data-ir-rol="cuenta-registro">Crear cuenta de ciudadano</button></div>
+      </div>`;
+  }
 
   function dibujar() {
     const estado = contexto.obtenerEstado();
+    sesion = obtenerHogarDeSesion(estado);
     const hogares = estado.hogares;
-    if (!formulario.hogarId && hogares.length) formulario.hogarId = hogares[0].id;
+    if (hogarVinculado()) {
+      formulario.hogarId = hogarVinculado().id;
+      if (paso === 1) paso = 2;
+    } else if (!hogares.some((hogar) => hogar.id === formulario.hogarId)) {
+      formulario.hogarId = hogares[0]?.id || "";
+    }
     raiz.innerHTML = `
       <section class="vista-rol" aria-labelledby="titulo-ciudadano">
         <header class="encabezado-vista">
@@ -26,6 +58,7 @@ export function renderizarCiudadano(raiz, contexto) {
           <button type="button" class="boton-pestaña ${pestaña === "nueva" ? "activo" : ""}" data-pestaña="nueva">Nueva solicitud</button>
           <button type="button" class="boton-pestaña ${pestaña === "mis" ? "activo" : ""}" data-pestaña="mis">Mis solicitudes</button>
         </nav>
+        ${bannerSesion()}
         <p class="aviso" data-aviso role="status" aria-live="polite" hidden></p>
         <div id="contenido-ciudadano"></div>
       </section>`;
@@ -48,16 +81,19 @@ export function renderizarCiudadano(raiz, contexto) {
       `<option value="${escaparHtml(hogar.id)}" ${hogar.id === formulario.hogarId ? "selected" : ""}>${escaparHtml(hogar.alias)} · ${escaparHtml(hogar.microzona)}</option>`
     ).join("");
     let cuerpo = "";
+    const vinculado = Boolean(hogarVinculado());
+    const totalPasos = vinculado ? 2 : 3;
+    const etiquetaPaso = (numero) => `Paso ${vinculado ? numero - 1 : numero} de ${totalPasos}`;
 
     if (paso === 1) {
       cuerpo = `
         <section class="tarjeta paso" aria-labelledby="paso-titulo">
-          <p class="ceja">Paso 1 de 3</p>
+          <p class="ceja">${etiquetaPaso(1)}</p>
           <h2 id="paso-titulo">Elige el hogar</h2>
           ${opcionesHogar ? `
             <label for="hogar-ciudadano">Hogar asociado</label>
             <select id="hogar-ciudadano" name="hogarId">${opcionesHogar}</select>
-            <p class="texto-ayuda">El acceso es simulado; selecciona el hogar que usarás para esta demostración.</p>
+            <p class="texto-ayuda">Sin sesión iniciada, selecciona el hogar que usarás para esta demostración.</p>
             <button class="boton primario" type="button" data-siguiente>Continuar</button>` :
             `<p>No hay hogares registrados. Solicita al facilitador que registre uno primero.</p>`}
         </section>`;
@@ -69,13 +105,13 @@ export function renderizarCiudadano(raiz, contexto) {
         </label>`).join("");
       cuerpo = `
         <section class="tarjeta paso" aria-labelledby="paso-titulo">
-          <p class="ceja">Paso 2 de 3</p>
+          <p class="ceja">${etiquetaPaso(2)}</p>
           <h2 id="paso-titulo">Materiales y cantidad</h2>
           <fieldset class="grupo-materiales"><legend>Selecciona uno o más materiales</legend>${casillas}</fieldset>
           <label for="cantidad-bolsas">Cantidad de bolsas (1 a 4)</label>
           <input id="cantidad-bolsas" name="bolsas" type="number" min="1" max="4" step="1" value="${formulario.bolsas}" required>
           <div class="acciones">
-            <button class="boton secundario" type="button" data-anterior>Volver</button>
+            ${vinculado ? "" : `<button class="boton secundario" type="button" data-anterior>Volver</button>`}
             <button class="boton primario" type="button" data-siguiente>Continuar</button>
           </div>
         </section>`;
@@ -83,7 +119,7 @@ export function renderizarCiudadano(raiz, contexto) {
       const hogar = estado.hogares.find((item) => item.id === formulario.hogarId);
       cuerpo = `
         <section class="tarjeta paso" aria-labelledby="paso-titulo">
-          <p class="ceja">Paso 3 de 3</p>
+          <p class="ceja">${etiquetaPaso(3)}</p>
           <h2 id="paso-titulo">Revisa y envía</h2>
           <dl class="resumen-datos">
             <dt>Hogar</dt><dd>${escaparHtml(hogar?.alias)} · ${escaparHtml(hogar?.microzona)}</dd>
@@ -197,7 +233,7 @@ export function renderizarCiudadano(raiz, contexto) {
 
   function dibujarSolicitudes(estado) {
     const contenido = raiz.querySelector("#contenido-ciudadano");
-    const hogar = estado.hogares.find((item) => item.id === formulario.hogarId) || estado.hogares[0];
+    const hogar = hogarVinculado() || estado.hogares.find((item) => item.id === formulario.hogarId) || estado.hogares[0];
     if (hogar) formulario.hogarId = hogar.id;
     const opcionesHogar = estado.hogares.map((item) =>
       `<option value="${escaparHtml(item.id)}" ${item.id === hogar?.id ? "selected" : ""}>${escaparHtml(item.alias)} · ${escaparHtml(item.microzona)}</option>`
@@ -219,7 +255,8 @@ export function renderizarCiudadano(raiz, contexto) {
       <section class="seccion-lista" aria-labelledby="mis-titulo">
         <div class="tarjeta">
           <h2 id="mis-titulo">Mis solicitudes</h2>
-          ${opcionesHogar ? `<label for="hogar-lista">Hogar</label><select id="hogar-lista">${opcionesHogar}</select>` : "<p>No hay hogares registrados.</p>"}
+          ${hogarVinculado() ? `<p><strong>Hogar:</strong> ${escaparHtml(hogar.alias)} · ${escaparHtml(hogar.microzona)}</p>`
+            : opcionesHogar ? `<label for="hogar-lista">Hogar</label><select id="hogar-lista">${opcionesHogar}</select>` : "<p>No hay hogares registrados.</p>"}
         </div>
         <div class="lista-tarjetas">${tarjetas}</div>
       </section>`;
@@ -239,7 +276,7 @@ export function renderizarCiudadano(raiz, contexto) {
     const resultado = transicionarEstado({
       solicitud,
       estadoNuevo: "CANCELADA",
-      responsable: `Ciudadano · ${solicitud.hogarId}`,
+      responsable: sesion?.usuario ? `Ciudadano · ${sesion.usuario.nombre}` : `Ciudadano · ${solicitud.hogarId}`,
       fecha: hoy(),
     });
     if (!resultado.ok) return mostrarAviso(raiz, resultado.mensaje, "error");

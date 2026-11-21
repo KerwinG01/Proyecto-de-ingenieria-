@@ -2,6 +2,7 @@
 import { mostrarAviso } from "./comun.js";
 import { crearDatosIniciales } from "./servicios.js";
 import { descartarKpiCalculados } from "./modo-prueba.js";
+import { borrarCuentasDemo } from "./autenticacion.js";
 
 export function renderizarInicio(raiz, contexto) {
   const estado = contexto.obtenerEstado();
@@ -36,7 +37,7 @@ export function renderizarInicio(raiz, contexto) {
         <h2 id="resumen-piloto">Estado de esta demostración</h2>
         <p><strong>Solicitudes guardadas:</strong> ${totalSolicitudes}</p>
         <p><strong>Recicladores activos:</strong> ${totalRecicladores}</p>
-        <p class="texto-ayuda">Los datos se conservan en el almacenamiento local de este navegador. Para empezar de cero, borra los datos de prueba: se conservan solo el hogar de demostración y los recicladores R1–R4.</p>
+        <p class="texto-ayuda">Los datos se conservan en el almacenamiento local de este navegador. Para empezar de cero, borra los datos de prueba: se eliminan las solicitudes, los hogares registrados y las cuentas demo, y se conservan solo el hogar de demostración y los recicladores R1–R4.</p>
         <p class="aviso" data-aviso role="status" aria-live="polite" hidden></p>
         <div class="acciones">
           <button class="boton peligro" type="button" data-borrar-datos>Borrar datos de prueba</button>
@@ -55,8 +56,9 @@ export function renderizarInicio(raiz, contexto) {
     </section>`;
 
   raiz.querySelector("[data-borrar-datos]").addEventListener("click", () => {
-    if (!window.confirm("¿Borrar las solicitudes, eventos y mensajes guardados en este navegador y volver a los datos base?")) return;
+    if (!window.confirm("¿Borrar las solicitudes, eventos, mensajes, hogares registrados y cuentas demo de este navegador y volver a los datos base?")) return;
     descartarKpiCalculados();
+    borrarCuentasDemo();
     contexto.actualizarEstado(() => crearDatosIniciales());
     mostrarAviso(raiz, "Datos de prueba borrados. La demostración volvió a los datos base.", "exito");
   });

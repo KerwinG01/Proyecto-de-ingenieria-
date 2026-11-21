@@ -45,11 +45,22 @@ function dibujarBandeja() {
 function dibujarVista() {
   if (panelCuenta) {
     renderizarAutenticacion(elementoVista, {
-      seleccionarPanel: (panel) => { selectorRol.value = `cuenta-${panel}`; },
+      seleccionarPanel: (panel) => {
+        panelCuenta = panel;
+        selectorRol.value = `cuenta-${panel}`;
+      },
       cerrar: () => {
         panelCuenta = null;
         selectorRol.value = rolActivo;
         dibujarVista();
+      },
+      obtenerEstado: () => estado,
+      guardarCambios: (actualizador) => {
+        estado = actualizador(estado);
+        const resultado = guardarEstado(estado);
+        if (!resultado.ok) anunciar(resultado.mensaje, "error");
+        dibujarBandeja();
+        return resultado;
       },
     }, panelCuenta);
     return;

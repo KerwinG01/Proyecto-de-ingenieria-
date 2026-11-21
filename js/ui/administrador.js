@@ -12,6 +12,7 @@ import { calcularTasaConfiabilidad } from "../motor.js";
 import { crearEscenarioPrueba } from "../escenario-prueba.js";
 import { crearDatosIniciales } from "./servicios.js";
 import { descartarKpiCalculados, renderizarModoPrueba } from "./modo-prueba.js";
+import { borrarCuentasDemo } from "./autenticacion.js";
 
 export function renderizarAdministrador(raiz, contexto) {
   dibujar();
@@ -180,8 +181,9 @@ export function renderizarAdministrador(raiz, contexto) {
   }
 
   function restablecerDemo() {
-    if (!window.confirm("¿Borrar las solicitudes, eventos y mensajes de este navegador y volver a los datos base?")) return;
+    if (!window.confirm("¿Borrar las solicitudes, eventos, mensajes, hogares registrados y cuentas demo de este navegador y volver a los datos base?")) return;
     descartarKpiCalculados();
+    borrarCuentasDemo();
     contexto.actualizarEstado(() => crearDatosIniciales());
     mostrarAviso(raiz, "Se restablecieron los datos base de la demostración.", "exito");
   }
